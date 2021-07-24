@@ -1,0 +1,26 @@
+name: example
+publish_to: 'none'
+version: 0.0.1+1
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  logging: ^1.0.1
+  path: ^1.8.0
+  sqflite: ^2.0.0+3
+  localchain:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  test: any
+
+flutter:
+  uses-material-design: true
+

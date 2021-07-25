@@ -5,11 +5,11 @@
 
 part of crypto;
 
-Future<CryptoKeyPair> ecdsaGenerate() async {
+Future<AsymmetricKeyPair<ECPublicKey, ECPrivateKey>> ecdsaGenerate() async {
   return await compute(_ecdsaGenerate, "").then((keyPair) => keyPair);
 }
 
-CryptoKeyPair _ecdsaGenerate(_) {
+AsymmetricKeyPair<ECPublicKey, ECPrivateKey> _ecdsaGenerate(_) {
   final ECKeyGeneratorParameters keyGeneratorParameters =
       ECKeyGeneratorParameters(ECCurve_secp256r1());
   ECKeyGenerator ecKeyGenerator = ECKeyGenerator();
@@ -17,12 +17,11 @@ CryptoKeyPair _ecdsaGenerate(_) {
       .init(ParametersWithRandom(keyGeneratorParameters, _secureRandom()));
   AsymmetricKeyPair<PublicKey, PrivateKey> keyPair =
       ecKeyGenerator.generateKeyPair();
-  return CryptoKeyPair(
-      public: _ecdsaEncodePublicKey(keyPair.publicKey as ECPublicKey),
-      private: _ecdsaEncodePrivateKey(keyPair.privateKey as ECPrivateKey));
+  return AsymmetricKeyPair<ECPublicKey, ECPrivateKey>(
+      keyPair.publicKey as ECPublicKey, keyPair.privateKey as ECPrivateKey);
 }
 
-String _ecdsaEncodePublicKey(ECPublicKey publicKey) {
+String ecdsaEncodePublicKey(ECPublicKey publicKey) {
   ASN1Sequence sequence = ASN1Sequence();
   ASN1Sequence algorithm = ASN1Sequence();
   algorithm.add(ASN1ObjectIdentifier.fromName('ecPublicKey'));
@@ -35,7 +34,23 @@ String _ecdsaEncodePublicKey(ECPublicKey publicKey) {
   return base64.encode(sequence.encodedBytes!);
 }
 
-String _ecdsaEncodePrivateKey(ECPrivateKey privateKey) {
+ECPublicKey ecdsaDecodePublicKey(String encodedKey) {
+  ASN1Parser topLevelParser = new ASN1Parser(base64.decode(encodedKey));
+  ASN1Sequence topLevelSeq = topLevelParser.nextObject() as ASN1Sequence;
+
+  ASN1Sequence algorithmSeq = topLevelSeq.elements![0] as ASN1Sequence;
+  ASN1BitString publicKeyBitString = topLevelSeq.elements![1] as ASN1BitString;
+
+  String curveName =
+      (algorithmSeq.elements![1] as ASN1ObjectIdentifier).readableName!;
+  ECDomainParameters ecDomainParameters = ECDomainParameters(curveName);
+  ECPoint? Q =
+      ecDomainParameters.curve.decodePoint(publicKeyBitString.stringValues!);
+
+  return ECPublicKey(Q, ecDomainParameters);
+}
+
+String ecdsaEncodePrivateKey(ECPrivateKey privateKey) {
   ASN1Sequence sequence = ASN1Sequence();
   ASN1Integer version = ASN1Integer(BigInt.from(0));
   ASN1Sequence algorithm = ASN1Sequence();
@@ -60,4 +75,27 @@ String _ecdsaEncodePrivateKey(ECPrivateKey privateKey) {
   sequence.add(privateKeyDer);
   sequence.encode();
   return base64.encode(sequence.encodedBytes!);
+}
+
+ECPrivateKey ecdsaDecodePrivateKey(String encodedKey) {
+  ASN1Parser topLevelParser = new ASN1Parser(base64.decode(encodedKey));
+  ASN1Sequence topLevelSeq = topLevelParser.nextObject() as ASN1Sequence;
+
+  ASN1Integer version = topLevelSeq.elements![0] as ASN1Integer;
+  ASN1Sequence algorithmSeq = topLevelSeq.elements![1] as ASN1Sequence;
+  ASN1OctetString privateKeyOctet = topLevelSeq.elements![2] as ASN1OctetString;
+
+  String curveName =
+      (algorithmSeq.elements![1] as ASN1ObjectIdentifier).readableName!;
+  ECDomainParameters ecDomainParameters = ECDomainParameters(curveName);
+
+  ASN1Sequence privateKeySeq =
+      ASN1Sequence.fromBytes(privateKeyOctet.octets as Uint8List);
+  ASN1Integer privateKeyVersion = privateKeySeq.elements![0] as ASN1Integer;
+  ASN1OctetString privateKeyValue =
+      privateKeySeq.elements![1] as ASN1OctetString;
+  ASN1Integer privateKeyBigInt =
+      ASN1Integer.fromBytes(privateKeyValue.encodedBytes!);
+
+  return ECPrivateKey(privateKeyBigInt.integer, ecDomainParameters);
 }

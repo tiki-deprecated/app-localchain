@@ -4,6 +4,9 @@
  */
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pointycastle/api.dart';
+import 'package:pointycastle/asymmetric/api.dart';
+import 'package:pointycastle/ecc/api.dart';
 
 import '../crypto/crypto.dart' as crypto;
 import 'key_store_exception.dart';
@@ -12,7 +15,9 @@ import 'key_store_repository.dart';
 
 class KeyStoreService {
   final KeyStoreRepository _keyStoreRepository;
-  KeyStoreModel? active;
+  KeyStoreModel? _active;
+  AsymmetricKeyPair<ECPublicKey, ECPrivateKey>? _signKey;
+  AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>? _dataKey;
 
   KeyStoreService({FlutterSecureStorage? secureStorage})
       : this._keyStoreRepository =
@@ -20,7 +25,7 @@ class KeyStoreService {
 
   Future<void> set(KeyStoreModel model) async {
     await _keyStoreRepository.save(model);
-    this.active = model;
+    this._active = model;
   }
 
   Future<void> load(String address) async {
@@ -28,18 +33,24 @@ class KeyStoreService {
     if (model.address == null)
       throw KeyStoreException("", address: address);
     else
-      this.active = model;
+      this._active = model;
   }
 
   Future<void> generate() async {
-    crypto.CryptoKeyPair ecdsaKeyPair = await crypto.ecdsaGenerate();
-    crypto.CryptoKeyPair rsaKeyPair = await crypto.rsaGenerate();
-    return set(KeyStoreModel(
-      address: crypto.sha3(ecdsaKeyPair.public),
-      dataPrivateKey: rsaKeyPair.private,
-      dataPublicKey: rsaKeyPair.public,
-      signPrivateKey: ecdsaKeyPair.private,
-      signPublicKey: ecdsaKeyPair.public,
-    ));
+    this._signKey = await crypto.ecdsaGenerate();
+    this._dataKey = await crypto.rsaGenerate();
+    return set(keysToModel(this._signKey!, this._dataKey!));
+  }
+
+  KeyStoreModel keysToModel(
+      AsymmetricKeyPair<ECPublicKey, ECPrivateKey> _signKey,
+      AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> _dataKey) {
+    String ecdsaPublicEncoded = crypto.ecdsaEncodePublicKey(_signKey.publicKey);
+    return KeyStoreModel(
+        address: crypto.sha3(ecdsaPublicEncoded),
+        dataPublicKey: crypto.rsaEncodePublicKey(_dataKey.publicKey),
+        dataPrivateKey: crypto.rsaEncodePrivateKey(_dataKey.privateKey),
+        signPublicKey: ecdsaPublicEncoded,
+        signPrivateKey: crypto.ecdsaEncodePrivateKey(_signKey.privateKey));
   }
 }

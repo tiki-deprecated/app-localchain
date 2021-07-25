@@ -5,22 +5,21 @@
 
 part of crypto;
 
-Future<CryptoKeyPair> rsaGenerate() async {
+Future<AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>> rsaGenerate() async {
   return await compute(_rsaGenerate, "").then((keyPair) => keyPair);
 }
 
-CryptoKeyPair _rsaGenerate(_) {
+AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> _rsaGenerate(_) {
   final keyGen = RSAKeyGenerator()
     ..init(ParametersWithRandom(
         RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
         _secureRandom()));
   AsymmetricKeyPair<PublicKey, PrivateKey> keyPair = keyGen.generateKeyPair();
-  return CryptoKeyPair(
-      public: _rsaEncodePublicKey(keyPair.publicKey as RSAPublicKey),
-      private: _rsaEncodePrivateKey(keyPair.privateKey as RSAPrivateKey));
+  return AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(
+      keyPair.publicKey as RSAPublicKey, keyPair.privateKey as RSAPrivateKey);
 }
 
-String _rsaEncodePublicKey(RSAPublicKey publicKey) {
+String rsaEncodePublicKey(RSAPublicKey publicKey) {
   ASN1Sequence sequence = ASN1Sequence();
   ASN1Sequence algorithm = ASN1Sequence();
   ASN1Object paramsAsn1Obj =
@@ -44,7 +43,21 @@ String _rsaEncodePublicKey(RSAPublicKey publicKey) {
   return base64.encode(sequence.encodedBytes!);
 }
 
-String _rsaEncodePrivateKey(RSAPrivateKey privateKey) {
+RSAPublicKey rsaDecodePublicKey(String encodedKey) {
+  ASN1Parser topLevelParser = new ASN1Parser(base64.decode(encodedKey));
+  ASN1Sequence topLevelSeq = topLevelParser.nextObject() as ASN1Sequence;
+
+  ASN1Sequence algorithmSeq = topLevelSeq.elements![0] as ASN1Sequence;
+  ASN1BitString publicKeyBitString = topLevelSeq.elements![1] as ASN1BitString;
+  ASN1Sequence publicKeySeq =
+      ASN1Sequence.fromBytes(publicKeyBitString.stringValues as Uint8List);
+
+  ASN1Integer modulus = publicKeySeq.elements![0] as ASN1Integer;
+  ASN1Integer exponent = publicKeySeq.elements![1] as ASN1Integer;
+  return RSAPublicKey(modulus.integer!, exponent.integer!);
+}
+
+String rsaEncodePrivateKey(RSAPrivateKey privateKey) {
   ASN1Sequence sequence = ASN1Sequence();
   ASN1Integer version = ASN1Integer(BigInt.from(0));
   ASN1Sequence algorithm = ASN1Sequence();
@@ -85,4 +98,67 @@ String _rsaEncodePrivateKey(RSAPrivateKey privateKey) {
   sequence.add(privateKeyOctet);
   sequence.encode();
   return base64.encode(sequence.encodedBytes!);
+}
+
+RSAPrivateKey rsaDecodePrivateKey(String encodedKey) {
+  ASN1Parser topLevelParser = new ASN1Parser(base64.decode(encodedKey));
+  ASN1Sequence topLevelSeq = topLevelParser.nextObject() as ASN1Sequence;
+
+  ASN1Integer version = topLevelSeq.elements![0] as ASN1Integer;
+  ASN1Sequence algorithmSeq = topLevelSeq.elements![1] as ASN1Sequence;
+  ASN1OctetString privateKeyOctet = topLevelSeq.elements![2] as ASN1OctetString;
+
+  ASN1Sequence publicKeySeq =
+      ASN1Sequence.fromBytes(privateKeyOctet.octets as Uint8List);
+  ASN1Integer privateKeyVersion = publicKeySeq.elements![0] as ASN1Integer;
+  ASN1Integer modulus = publicKeySeq.elements![1] as ASN1Integer;
+  ASN1Integer publicExponent = publicKeySeq.elements![2] as ASN1Integer;
+  ASN1Integer privateExponent = publicKeySeq.elements![3] as ASN1Integer;
+  ASN1Integer prime1 = publicKeySeq.elements![4] as ASN1Integer;
+  ASN1Integer prime2 = publicKeySeq.elements![5] as ASN1Integer;
+  ASN1Integer exponent1 = publicKeySeq.elements![6] as ASN1Integer;
+  ASN1Integer exponent2 = publicKeySeq.elements![7] as ASN1Integer;
+  ASN1Integer coefficient = publicKeySeq.elements![8] as ASN1Integer;
+
+  return RSAPrivateKey(modulus.integer!, privateExponent.integer!,
+      prime1.integer, prime2.integer);
+}
+
+Uint8List rsaEncrypt(RSAPublicKey myPublic, Uint8List dataToEncrypt) {
+  final encryptor = OAEPEncoding(RSAEngine())
+    ..init(true, PublicKeyParameter<RSAPublicKey>(myPublic)); // true=encrypt
+
+  return _rsaProcessInBlocks(encryptor, dataToEncrypt);
+}
+
+Uint8List rsaDecrypt(RSAPrivateKey myPrivate, Uint8List cipherText) {
+  final decryptor = OAEPEncoding(RSAEngine())
+    ..init(
+        false, PrivateKeyParameter<RSAPrivateKey>(myPrivate)); // false=decrypt
+
+  return _rsaProcessInBlocks(decryptor, cipherText);
+}
+
+Uint8List _rsaProcessInBlocks(AsymmetricBlockCipher engine, Uint8List input) {
+  final numBlocks = input.length ~/ engine.inputBlockSize +
+      ((input.length % engine.inputBlockSize != 0) ? 1 : 0);
+
+  final output = Uint8List(numBlocks * engine.outputBlockSize);
+
+  var inputOffset = 0;
+  var outputOffset = 0;
+  while (inputOffset < input.length) {
+    final chunkSize = (inputOffset + engine.inputBlockSize <= input.length)
+        ? engine.inputBlockSize
+        : input.length - inputOffset;
+
+    outputOffset += engine.processBlock(
+        input, inputOffset, chunkSize, output, outputOffset);
+
+    inputOffset += chunkSize;
+  }
+
+  return (output.length == outputOffset)
+      ? output
+      : output.sublist(0, outputOffset);
 }

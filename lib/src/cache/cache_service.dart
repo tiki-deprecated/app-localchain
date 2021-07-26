@@ -4,15 +4,15 @@
  */
 
 import 'package:localchain/localchain.dart';
+import 'package:sqflite/sqlite_api.dart';
 
-import '../db/db_config.dart';
 import 'cache_repository.dart';
 
 class CacheService {
   final CacheRepository _cacheRepository;
 
-  CacheService(DbConfig dbConfig)
-      : this._cacheRepository = CacheRepository(dbConfig.database);
+  CacheService(Database database)
+      : this._cacheRepository = CacheRepository(database);
 
   Future<void> drop() => _cacheRepository.drop();
   Future<CacheModel> insert(CacheModel cache) => _cacheRepository.insert(cache);

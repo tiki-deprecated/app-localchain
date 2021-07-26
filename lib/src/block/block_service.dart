@@ -14,6 +14,7 @@ import '../db/db_page.dart';
 import '../key_store/key_store_service.dart';
 import 'block_model.dart';
 import 'block_repository.dart';
+import 'contents/block_contents.dart';
 
 class BlockService {
   final log = Logger('BlockService');
@@ -23,12 +24,10 @@ class BlockService {
   BlockService(Database database, this._keyStoreService)
       : this._blockRepository = BlockRepository(database);
 
-  //TODO handle first insert
-  //TODO implement schema
   //TODO handle multiple sets of keys/users
-  Future<BlockModel> add(Uint8List plainTextBytes) async {
-    Uint8List cipherText =
-        crypto.rsaEncrypt(_keyStoreService.dataKey!.publicKey, plainTextBytes);
+  Future<BlockModel> add(BlockContents blockContents) async {
+    Uint8List cipherText = crypto.rsaEncrypt(
+        _keyStoreService.dataKey!.publicKey, blockContents.toBytes());
     Uint8List signature =
         crypto.ecdsaSign(_keyStoreService.signKey!.privateKey, cipherText);
 

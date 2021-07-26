@@ -4,6 +4,7 @@
  */
 
 import 'package:localchain/localchain.dart';
+import 'package:localchain/src/cache/cache_model_response.dart';
 import 'package:sqflite/sqlite_api.dart';
 
 import 'cache_repository.dart';
@@ -17,5 +18,8 @@ class CacheService {
   Future<void> drop() => _cacheRepository.drop();
   Future<CacheModel> insert(CacheModel cache) => _cacheRepository.insert(cache);
 
-  Future<CacheModel?> get(int id) => _cacheRepository.get(id);
+  Future<CacheModelResponse?> get(int id) async {
+    CacheModel? cacheModel = await _cacheRepository.get(id);
+    return CacheModelResponse.fromModel(cacheModel);
+  }
 }

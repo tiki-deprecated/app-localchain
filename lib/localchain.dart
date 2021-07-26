@@ -1,15 +1,14 @@
 library localchain;
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:localchain/src/block/block_service.dart';
-import 'package:localchain/src/cache/cache_model.dart';
-import 'package:localchain/src/cache/cache_service.dart';
 import 'package:logging/logging.dart';
 
 import 'src/block/block_model.dart';
+import 'src/block/block_service.dart';
+import 'src/block/contents/block_contents.dart';
+import 'src/cache/cache_model.dart';
+import 'src/cache/cache_model_response.dart';
+import 'src/cache/cache_service.dart';
 import 'src/crypto/crypto.dart' as crypto;
 import 'src/db/db_config.dart';
 import 'src/db/db_page.dart';
@@ -17,7 +16,11 @@ import 'src/key_store/key_store_exception.dart';
 import 'src/key_store/key_store_service.dart';
 
 export 'src/block/block_model.dart';
+export 'src/block/contents/block_contents.dart';
+export 'src/block/contents/block_contents_bytea.dart';
+export 'src/block/contents/block_contents_json.dart';
 export 'src/cache/cache_model.dart';
+export 'src/cache/cache_model_response.dart';
 export 'src/key_store/key_store_model.dart';
 
 class Localchain {
@@ -31,24 +34,24 @@ class Localchain {
   Localchain({FlutterSecureStorage? secureStorage})
       : this.keystore = KeyStoreService(secureStorage: secureStorage);
 
-  //pass callback to verify complete
-  Future<void> open() async {
+  Future<void> open({Function(bool)? onVerify}) async {
     await _dbConfig.init(keystore);
     this._cacheService = CacheService(_dbConfig.database);
     this._blockService = BlockService(_dbConfig.database, keystore);
-    await verify();
+    verify().then(onVerify ?? (_) {});
   }
 
-  Future<BlockModel> add(String plaintext) async {
+  Future<BlockModel> add(BlockContents blockContents) async {
     _keyGuard();
-    Uint8List plainTextBytes = Uint8List.fromList(utf8.encode(plaintext));
-    BlockModel block = await _blockService.add(plainTextBytes);
+    BlockModel block = await _blockService.add(blockContents);
     await _cacheService.insert(CacheModel(
-        contents: plainTextBytes, cached: DateTime.now(), block: block));
+        contents: blockContents.toBytes(),
+        cached: DateTime.now(),
+        block: block));
     return block;
   }
 
-  Future<CacheModel?> get(int id) => _cacheService.get(id);
+  Future<CacheModelResponse?> get(int id) => _cacheService.get(id);
 
   Future<bool> verify() async {
     _keyGuard();

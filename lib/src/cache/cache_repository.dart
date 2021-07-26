@@ -9,14 +9,14 @@ import 'package:sqflite/sqflite.dart';
 import 'cache_model.dart';
 
 class CacheRepository {
-  static const String _table = 'cache';
+  static const String table = 'cache';
   final _log = Logger('CacheRepository');
   final Database _database;
 
   CacheRepository(this._database);
 
   Future<CacheModel> insert(CacheModel cache) async {
-    await _database.insert(_table, cache.toMap(),
+    await _database.insert(table, cache.toMap(),
         conflictAlgorithm: ConflictAlgorithm.fail);
     _log.info('insert: #' + cache.block!.id.toString());
     return cache;
@@ -33,7 +33,7 @@ class CacheRepository {
         "INNER JOIN block ON block.id = cache.block_id "
         "WHERE block.id = ?",
         [id]);
-
+    if (rows.isEmpty) return null;
     Map<String, Object?> blockMap = {
       'id': rows[0]['block_id'],
       'contents': rows[0]['block_contents'],
@@ -54,7 +54,7 @@ class CacheRepository {
   }
 
   Future<void> drop() async {
-    _database.delete(_table);
+    _database.delete(table);
     _log.finest('dropped cache');
   }
 }

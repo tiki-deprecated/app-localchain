@@ -48,7 +48,7 @@ class DbConfig {
       String sql = createSql.trim();
       if (sql.isNotEmpty) await db.execute(sql);
     }
-    await _firstBlock(keyStoreService, db);
+    await firstBlock(keyStoreService, db);
   }
 
   Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -63,14 +63,13 @@ class DbConfig {
     _log.finest('open');
   }
 
-  Future<void> _firstBlock(
-      KeyStoreService keyStoreService, Database database) async {
+  Future<void> firstBlock(KeyStoreService keyStoreService, Database db) async {
     Uint8List cipherText = crypto.rsaEncrypt(keyStoreService.dataKey!.publicKey,
         BlockContentsStart(start: _startContents).toBytes());
     Uint8List signature =
         crypto.ecdsaSign(keyStoreService.signKey!.privateKey, cipherText);
 
-    await database.insert(
+    await db.insert(
         "block",
         BlockModel(
                 contents: cipherText,

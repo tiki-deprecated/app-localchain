@@ -1,0 +1,26 @@
+name: localchain
+description: its a secret.
+version: 0.0.1
+homepage: https://mytiki.com
+repository: https://github.com/tiki/localchain
+issue_tracker: https://github.com/tiki/localchain/issues
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^4.2.0
+  logging: ^1.0.1
+  path: ^1.8.0
+  pointycastle: ^3.1.3
+  sqflite: ^2.0.0+3
+
+dev_dependencies:
+  test: ^1.17.10
+
+flutter:
+  assets:
+    - packages/localchain/src/db/db_create_tables.sql

@@ -6,4 +6,5 @@
 class BlockContentsSchema {
   static const json = "json";
   static const bytea = "byeta";
+  static const start = "start";
 }

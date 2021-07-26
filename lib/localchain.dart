@@ -19,6 +19,7 @@ export 'src/block/block_model.dart';
 export 'src/block/contents/block_contents.dart';
 export 'src/block/contents/block_contents_bytea.dart';
 export 'src/block/contents/block_contents_json.dart';
+export 'src/block/contents/block_contents_start.dart';
 export 'src/cache/cache_model.dart';
 export 'src/cache/cache_model_response.dart';
 export 'src/key_store/key_store_model.dart';

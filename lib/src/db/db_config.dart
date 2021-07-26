@@ -3,17 +3,17 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
-import 'package:localchain/localchain.dart';
-import 'package:localchain/src/key_store/key_store_service.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../block/block_model.dart';
+import '../block/contents/block_contents_start.dart';
 import '../crypto/crypto.dart' as crypto;
+import '../key_store/key_store_service.dart';
 
 class DbConfig {
   static const int _version = 1;
@@ -65,9 +65,8 @@ class DbConfig {
 
   Future<void> _firstBlock(
       KeyStoreService keyStoreService, Database database) async {
-    Uint8List plainTextBytes = Uint8List.fromList(utf8.encode(_startContents));
-    Uint8List cipherText =
-        crypto.rsaEncrypt(keyStoreService.dataKey!.publicKey, plainTextBytes);
+    Uint8List cipherText = crypto.rsaEncrypt(keyStoreService.dataKey!.publicKey,
+        BlockContentsStart(start: _startContents).toBytes());
     Uint8List signature =
         crypto.ecdsaSign(keyStoreService.signKey!.privateKey, cipherText);
 

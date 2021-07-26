@@ -10,7 +10,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DbConfig {
   static const int _version = 1;
-  final log = Logger('DbConfig');
+  final _log = Logger('DbConfig');
   late Database database;
 
   Future<void> init() async {
@@ -26,24 +26,29 @@ class DbConfig {
   }
 
   Future<void> onConfigure(Database db) async {
-    log.finest('configure');
+    _log.finest('configure');
   }
 
   Future<void> onCreate(Database db, int version) async {
-    log.info('create');
-    await db.execute(await rootBundle
-        .loadString('packages/localchain/src/db/db_create_tables.sql'));
+    _log.info('create');
+    String createSqlScript = await rootBundle
+        .loadString('packages/localchain/src/db/db_create_tables.sql');
+    List<String> createSqls = createSqlScript.split(";");
+    for (String createSql in createSqls) {
+      String sql = createSql.trim();
+      if (sql.isNotEmpty) await db.execute(sql);
+    }
   }
 
   Future<void> onUpgrade(Database db, int oldVersion, int newVersion) async {
-    log.finest('upgrade');
+    _log.finest('upgrade');
   }
 
   Future<void> onDowngrade(Database db, int oldVersion, int newVersion) async {
-    log.finest('downgrade');
+    _log.finest('downgrade');
   }
 
   Future<void> onOpen(Database db) async {
-    log.finest('open');
+    _log.finest('open');
   }
 }

@@ -4,8 +4,8 @@
  */
 
 class KeyStoreException implements Exception {
-  String? address;
-  String message;
+  final String? address;
+  final String message;
 
   KeyStoreException(this.message, {this.address});
 

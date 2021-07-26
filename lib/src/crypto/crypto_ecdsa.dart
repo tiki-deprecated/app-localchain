@@ -99,3 +99,38 @@ ECPrivateKey ecdsaDecodePrivateKey(String encodedKey) {
 
   return ECPrivateKey(privateKeyBigInt.integer, ecDomainParameters);
 }
+
+ECPublicKey ecdsaPublicKey(ECPrivateKey privateKey) {
+  ECPoint? Q = privateKey.parameters!.G * privateKey.d;
+  return ECPublicKey(Q, privateKey.parameters);
+}
+
+Uint8List ecdsaSign(ECPrivateKey privateKey, Uint8List message) {
+  Signer signer = Signer("SHA-256/ECDSA");
+  signer.init(
+      true,
+      ParametersWithRandom(
+          PrivateKeyParameter<ECPrivateKey>(privateKey), _secureRandom()));
+  ECSignature signature = signer.generateSignature(message) as ECSignature;
+
+  BytesBuilder bytesBuilder = BytesBuilder();
+  Uint8List encodedR = encodeBigInt(signature.r);
+  bytesBuilder.addByte(encodedR.length);
+  bytesBuilder.add(encodedR);
+  bytesBuilder.add(encodeBigInt(signature.s));
+  return bytesBuilder.toBytes();
+}
+
+bool ecdsaVerify(
+    ECPublicKey publicKey, Uint8List signature, Uint8List message) {
+  Signer signer = Signer("SHA-256/ECDSA");
+  signer.init(false, PublicKeyParameter<ECPublicKey>(publicKey));
+
+  int rLength = signature[0];
+  Uint8List encodedR = signature.sublist(1, 1 + rLength);
+  Uint8List encodedS = signature.sublist(1 + rLength);
+  ECSignature ecSignature =
+      ECSignature(decodeBigInt(encodedR), decodeBigInt(encodedS));
+
+  return signer.verifySignature(message, ecSignature);
+}

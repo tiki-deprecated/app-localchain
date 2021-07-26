@@ -11,17 +11,17 @@ import 'key_store_model.dart';
 
 class KeyStoreRepository {
   static const _keyPrefix = 'com.mytiki.localchain.keystore.';
-  final FlutterSecureStorage secureStorage;
+  final FlutterSecureStorage _secureStorage;
 
-  KeyStoreRepository(this.secureStorage);
+  KeyStoreRepository(this._secureStorage);
 
   Future<void> save(KeyStoreModel model) async {
-    await secureStorage.write(
+    await _secureStorage.write(
         key: _keyPrefix + model.address!, value: jsonEncode(model.toJson()));
   }
 
   Future<KeyStoreModel> get(String address) async {
-    String? raw = await secureStorage.read(key: _keyPrefix + address);
+    String? raw = await _secureStorage.read(key: _keyPrefix + address);
     Map<String, dynamic>? jsonMap;
     if (raw != null) jsonMap = jsonDecode(raw);
     return KeyStoreModel.fromJson(jsonMap);

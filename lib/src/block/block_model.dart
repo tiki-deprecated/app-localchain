@@ -3,17 +3,26 @@
  * MIT license. See LICENSE file in root directory.
  */
 
+import 'dart:typed_data';
+
 class BlockModel {
   int? id;
-  String? contents;
-  String? previousHash;
+  Uint8List? contents;
+  Uint8List? signature;
+  Uint8List? previousHash;
   DateTime? created;
 
-  BlockModel({this.id, this.contents, this.previousHash, this.created});
+  BlockModel(
+      {this.id,
+      this.contents,
+      this.signature,
+      this.previousHash,
+      this.created});
 
   BlockModel.fromMap(Map<String, dynamic> map) {
     this.id = map['id'];
     this.contents = map['contents'];
+    this.signature = map['signature'];
     this.previousHash = map['previous_hash'];
     if (map['created_epoch'] != null)
       this.created = DateTime.fromMillisecondsSinceEpoch(map['created_epoch']);
@@ -22,12 +31,13 @@ class BlockModel {
   Map<String, dynamic> toMap() => {
         'id': id,
         'contents': contents,
+        'signature': signature,
         'previous_hash': previousHash,
         'created_epoch': created?.millisecondsSinceEpoch
       };
 
   @override
   String toString() {
-    return 'BlockModel{id: $id, contents: $contents, previousHash: $previousHash, created: $created}';
+    return 'BlockModel{id: $id, created: $created}';
   }
 }

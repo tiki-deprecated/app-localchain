@@ -124,6 +124,10 @@ RSAPrivateKey rsaDecodePrivateKey(String encodedKey) {
       prime1.integer, prime2.integer);
 }
 
+RSAPublicKey rsaPublicKey(RSAPrivateKey privateKey) {
+  return RSAPublicKey(privateKey.modulus!, privateKey.publicExponent!);
+}
+
 Uint8List rsaEncrypt(RSAPublicKey myPublic, Uint8List dataToEncrypt) {
   final encryptor = OAEPEncoding(RSAEngine())
     ..init(true, PublicKeyParameter<RSAPublicKey>(myPublic)); // true=encrypt

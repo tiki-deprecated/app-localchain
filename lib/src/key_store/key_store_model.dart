@@ -34,4 +34,11 @@ class KeyStoreModel {
         'dataPrivateKey': dataPrivateKey,
         'dataPublicKey': dataPublicKey,
       };
+
+  @override
+  String toString() {
+    return 'KeyStoreModel{address: $address, signPrivateKey: $signPrivateKey, '
+        'signPublicKey: $signPublicKey, dataPrivateKey: $dataPrivateKey, '
+        'dataPublicKey: $dataPublicKey}';
+  }
 }

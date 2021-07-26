@@ -3,40 +3,72 @@
  * MIT license. See LICENSE file in root directory.
  */
 
+import 'dart:typed_data';
+
 import 'package:logging/logging.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/utils/utils.dart';
 
 import '../db/db_page.dart';
 import 'block_model.dart';
 
 class BlockRepository {
   static const String _table = 'block';
-  final log = Logger('BlockRepository');
-  final Database database;
+  final _log = Logger('BlockRepository');
+  final Database _database;
 
-  BlockRepository(this.database);
+  BlockRepository(this._database);
 
   Future<BlockModel> insert(BlockModel block) async {
-    int id = await database.insert(_table, block.toMap(),
+    int id = await _database.insert(_table, block.toMap(),
         conflictAlgorithm: ConflictAlgorithm.fail);
     block.id = id;
-    log.info('inserted: #' + id.toString());
+    _log.info('inserted: #' + id.toString());
     return block;
   }
 
-  Future<BlockModel?> get(int id) async {
-    List<Map<String, Object?>> rows = await database.query(_table,
-        columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
+  Future<BlockModel?> findById(int id) async {
+    List<Map<String, Object?>> rows = await _database.query(_table,
+        columns: [
+          'id',
+          'contents',
+          'signature',
+          'previous_hash',
+          'created_epoch'
+        ],
         where: 'id = ?',
         whereArgs: [id]);
     BlockModel block = BlockModel.fromMap(rows[0]);
-    log.finest('got: ' + block.toString());
+    _log.finest('findById: ' + block.toString());
     return block;
   }
 
-  Future<DbPage<BlockModel>> getPage(int pageNumber, int pageSize) async {
-    List<Map<String, Object?>> rows = await database.query(_table,
-        columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
+  Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash) async {
+    try {
+      List<Map<String, Object?>> rows = await _database.rawQuery(
+          "SELECT id, contents, signature, previous_hash, created_epoch "
+                  "FROM block WHERE previous_hash = X'" +
+              hex(previousHash) +
+              "'");
+      List<BlockModel> blocks =
+          rows.map((row) => BlockModel.fromMap(row)).toList();
+      _log.finest(
+          'findByPreviousHash: ' + blocks.length.toString() + " block(s)");
+      return blocks;
+    } catch (_) {
+      return List.empty();
+    }
+  }
+
+  Future<DbPage<BlockModel>> page(int pageNumber, int pageSize) async {
+    List<Map<String, Object?>> rows = await _database.query(_table,
+        columns: [
+          'id',
+          'contents',
+          'signature',
+          'previous_hash',
+          'created_epoch'
+        ],
         where: 'id > ?',
         whereArgs: [pageNumber * pageSize],
         limit: pageSize,
@@ -52,24 +84,30 @@ class BlockRepository {
         totalPages: (tableSize / pageSize).ceil(),
         elements: blocks);
 
-    log.finest('got Page: ' + page.toString());
+    _log.finest('page: ' + page.toString());
     return page;
   }
 
   Future<int?> count() async {
     int? count = Sqflite.firstIntValue(
-        await database.rawQuery('SELECT COUNT (*) from $_table'));
-    log.finest('count: ' + count.toString());
+        await _database.rawQuery('SELECT COUNT (*) from $_table'));
+    _log.finest('count: ' + count.toString());
     return count;
   }
 
   Future<BlockModel> last() async {
-    List<Map<String, Object?>> rows = await database.query(_table,
-        columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
+    List<Map<String, Object?>> rows = await _database.query(_table,
+        columns: [
+          'id',
+          'contents',
+          'signature',
+          'previous_hash',
+          'created_epoch'
+        ],
         orderBy: 'id DESC',
         limit: 1);
     BlockModel block = BlockModel.fromMap(rows[0]);
-    log.finest('last: ' + block.toString());
+    _log.finest('last: ' + block.toString());
     return block;
   }
 }

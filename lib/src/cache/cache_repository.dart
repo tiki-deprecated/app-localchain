@@ -24,14 +24,14 @@ class CacheRepository {
 
   Future<CacheModel?> get(int id) async {
     List<Map<String, Object?>> rows = await _database.rawQuery(
-        "SELECT cache.contents AS cache_contents, "
-        "cache.cached_epoch AS cache_cached_epoch, block.id AS block_id, "
-        "block.contents AS block_contents, block.signature AS block_signature, "
-        "block.previous_hash AS block_previous_hash, "
-        "block.created_epoch AS block_created_epoch "
-        "FROM cache "
-        "INNER JOIN block ON block.id = cache.block_id "
-        "WHERE block.id = ?",
+        'SELECT cache.contents AS cache_contents, '
+        'cache.cached_epoch AS cache_cached_epoch, block.id AS block_id, '
+        'block.contents AS block_contents, block.signature AS block_signature, '
+        'block.previous_hash AS block_previous_hash, '
+        'block.created_epoch AS block_created_epoch '
+        'FROM cache '
+        'INNER JOIN block ON block.id = cache.block_id '
+        'WHERE block.id = ?',
         [id]);
     if (rows.isEmpty) return null;
     Map<String, Object?> blockMap = {

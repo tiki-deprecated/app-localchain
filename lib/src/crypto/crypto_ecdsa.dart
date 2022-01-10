@@ -12,6 +12,7 @@ Future<AsymmetricKeyPair<ECPublicKey, ECPrivateKey>> ecdsaGenerate() async {
 AsymmetricKeyPair<ECPublicKey, ECPrivateKey> _ecdsaGenerate(_) {
   final ECKeyGeneratorParameters keyGeneratorParameters =
       ECKeyGeneratorParameters(ECCurve_secp256r1());
+
   ECKeyGenerator ecKeyGenerator = ECKeyGenerator();
   ecKeyGenerator
       .init(ParametersWithRandom(keyGeneratorParameters, _secureRandom()));

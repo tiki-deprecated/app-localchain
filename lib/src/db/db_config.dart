@@ -7,7 +7,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../block/block_model.dart';
@@ -15,6 +14,7 @@ import '../block/contents/block_contents_start.dart';
 import '../crypto/crypto.dart' as crypto;
 import '../key_store/key_store_service.dart';
 
+//todo move this into utils
 class DbConfig {
   static const int _version = 1;
   static const String _startContents = "START";
@@ -22,8 +22,7 @@ class DbConfig {
   late Database database;
 
   Future<void> init(KeyStoreService keyStoreService) async {
-    database = await openDatabase(
-        join(await getDatabasesPath(), 'blockchain.db'),
+    database = await openDatabase(await getDatabasesPath() + '/blockchain.db',
         version: _version,
         onConfigure: onConfigure,
         onCreate: (Database db, int version) =>

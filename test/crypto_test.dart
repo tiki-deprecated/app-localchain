@@ -4,12 +4,14 @@
  */
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:localchain/src/crypto/crypto.dart';
 import 'package:pointycastle/api.dart';
 import 'package:pointycastle/asymmetric/api.dart';
 import 'package:pointycastle/ecc/api.dart';
+import 'package:pointycastle/random/fortuna_random.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -126,6 +128,10 @@ void main() {
       bool verify = ecdsaVerify(keyPair.publicKey, signature,
           Uint8List.fromList(utf8.encode(message)));
       expect(verify, true);
+    });
+
+    test('aesGenerate_success', () async {
+      await aesGenerate();
     });
   });
 }

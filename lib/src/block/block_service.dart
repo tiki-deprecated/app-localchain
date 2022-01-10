@@ -24,7 +24,7 @@ class BlockService {
   BlockService(Database database, this._keyStoreService)
       : this._blockRepository = BlockRepository(database);
 
-  //TODO handle multiple sets of keys/users
+  // TODO handle multiple sets of keys/users
   Future<BlockModel> add(BlockContents blockContents) async {
     Uint8List cipherText = crypto.rsaEncrypt(
         _keyStoreService.dataKey!.publicKey, blockContents.toBytes());

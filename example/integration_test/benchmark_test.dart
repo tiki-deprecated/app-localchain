@@ -3,23 +3,13 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-import 'dart:convert';
-import 'dart:math';
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:localchain/src/crypto/crypto.dart';
-import 'package:pointycastle/api.dart';
-import 'package:pointycastle/asymmetric/api.dart';
-import 'package:pointycastle/digests/sha256.dart';
-import 'package:pointycastle/ecc/api.dart';
-import 'package:pointycastle/random/fortuna_random.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   group('Benchmark Tests', () {
-    test('benchmark_rsa', () async {
+    /*test('benchmark_rsa', () async {
       AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> keyPair =
           await rsaGenerate();
       DateTime start = DateTime.now();
@@ -89,6 +79,6 @@ void main() {
       print("ECDSA Done: " + stop.toIso8601String());
       print("ECDSA Delta (microseconds): " + delta.inMicroseconds.toString());
       print("ECDSA Hash Rate: " + rate.round().toString());
-    });
+    });*/
   });
 }

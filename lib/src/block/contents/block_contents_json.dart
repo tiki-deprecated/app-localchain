@@ -6,27 +6,23 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:localchain/src/block/contents/block_contents_schema.dart';
-
 import 'block_contents.dart';
-import 'block_contents_codec.dart';
+import 'block_contents_schema.dart';
 
 class BlockContentsJson extends BlockContents {
   String? json;
 
-  BlockContentsJson({this.json}) : super(schema: BlockContentsSchema.json);
+  BlockContentsJson({this.json}) : super(BlockContentsSchema.json);
+
+  BlockContentsJson.payload(Uint8List bytes)
+      : json = utf8.decode(bytes),
+        super(BlockContentsSchema.json);
 
   @override
-  Uint8List toBytes() => encode(schema, Uint8List.fromList(utf8.encode(json!)));
-
-  @override
-  BlockContentsJson fromBytes(Uint8List bytes) {
-    this.json = utf8.decode(bytes.sublist(1 + schema.length));
-    return this;
-  }
+  Uint8List get payload => Uint8List.fromList(utf8.encode(json!));
 
   @override
   String toString() {
-    return 'BlockContentsJson{schema:$schema json: $json}';
+    return 'BlockContentsJson{_schema: $schema, json: $json}';
   }
 }

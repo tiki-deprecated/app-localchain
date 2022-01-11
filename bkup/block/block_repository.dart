@@ -6,49 +6,63 @@
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/utils/utils.dart';
 
+import '../db/db_page.dart';
 import 'block_model.dart';
 
 class BlockRepository {
-  static const String _table = 'block';
+  static const String table = 'block';
   final _log = Logger('BlockRepository');
-
   final Database _database;
 
   BlockRepository(this._database);
 
   Future<BlockModel> insert(BlockModel block) async {
-    int id = await _database.insert(_table, block.toMap(),
+    int id = await _database.insert(table, block.toMap(),
         conflictAlgorithm: ConflictAlgorithm.fail);
     block.id = id;
-    _log.finest('inserted: #' + id.toString());
+    _log.info('inserted: #' + id.toString());
+    return block;
+  }
+
+  Future<BlockModel?> findById(int id) async {
+    List<Map<String, Object?>> rows = await _database.query(table,
+        columns: [
+          'id',
+          'contents',
+          'signature',
+          'previous_hash',
+          'created_epoch'
+        ],
+        where: 'id = ?',
+        whereArgs: [id]);
+    if (rows.isEmpty) return null;
+    BlockModel block = BlockModel.fromMap(rows[0]);
+    _log.finest('findById: ' + block.toString());
     return block;
   }
 
   Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash) async {
     try {
-      List<Map<String, Object?>> rows = await _database.query(_table,
-          columns: [
-            'id',
-            'contents',
-            'previous_hash',
-            'created_epoch',
-          ],
-          where: '"previous_hash" = ?',
-          whereArgs: [previousHash]);
+      List<Map<String, Object?>> rows = await _database.rawQuery(
+          "SELECT id, contents, signature, previous_hash, created_epoch "
+                  "FROM block WHERE previous_hash = X'" +
+              hex(previousHash) +
+              "'");
       if (rows.isEmpty) return List.empty();
       List<BlockModel> blocks =
           rows.map((row) => BlockModel.fromMap(row)).toList();
       _log.finest(
           'findByPreviousHash: ' + blocks.length.toString() + " block(s)");
       return blocks;
-    } catch (error) {
+    } catch (_) {
       return List.empty();
     }
   }
 
-  /*Future<DbPage<BlockModel>> page(int pageNumber, int pageSize) async {
+  Future<DbPage<BlockModel>> page(int pageNumber, int pageSize) async {
     List<Map<String, Object?>> rows = await _database.query(table,
         columns: [
           'id',
@@ -98,5 +112,5 @@ class BlockRepository {
     BlockModel block = BlockModel.fromMap(rows[0]);
     _log.finest('last: ' + block.toString());
     return block;
-  }*/
+  }
 }

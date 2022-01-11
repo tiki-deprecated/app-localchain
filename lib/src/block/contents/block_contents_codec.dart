@@ -11,23 +11,47 @@ import 'block_contents_bytea.dart';
 import 'block_contents_json.dart';
 import 'block_contents_schema.dart';
 
-BlockContents decode(Uint8List bytes) {
-  int schemaLength = bytes[0];
-  String schema = utf8.decode(bytes.sublist(1, 1 + schemaLength));
+const BlockContentsCodec blockContents = BlockContentsCodec();
 
-  switch (schema) {
-    case BlockContentsSchema.json:
-      return BlockContentsJson().fromBytes(bytes);
-    case BlockContentsSchema.bytea:
-    default:
-      return BlockContentsBytea().fromBytes(bytes);
+class BlockContentsCodec extends Codec<BlockContents, Uint8List> {
+  const BlockContentsCodec();
+
+  @override
+  Converter<Uint8List, BlockContents> get decoder => BlockContentsDecoder();
+
+  @override
+  Converter<BlockContents, Uint8List> get encoder => BlockContentsEncoder();
+}
+
+class BlockContentsDecoder extends Converter<Uint8List, BlockContents> {
+  @override
+  BlockContents convert(Uint8List input) {
+    BlockContentsSchema? schema =
+        BlockContentsSchema.fromBytes(input.sublist(1, 1 + input[0]));
+    Uint8List payload = input.sublist(1 + input[0]);
+
+    switch (schema) {
+      case BlockContentsSchema.json:
+        return BlockContentsJson.payload(payload);
+      case BlockContentsSchema.bytea:
+      default:
+        return BlockContentsBytea.payload(payload);
+    }
   }
 }
 
-Uint8List encode(String schema, Uint8List? body) {
-  BytesBuilder bytesBuilder = BytesBuilder();
-  bytesBuilder.addByte(schema.length);
-  bytesBuilder.add(Uint8List.fromList(utf8.encode(schema)));
-  if (body != null) bytesBuilder.add(body);
-  return bytesBuilder.toBytes();
+class BlockContentsEncoder extends Converter<BlockContents, Uint8List> {
+  @override
+  Uint8List convert(BlockContents input) {
+    BytesBuilder bytesBuilder = BytesBuilder();
+    Uint8List schemaBytes = input.schema.bytes;
+    if (schemaBytes.length > 0xff)
+      throw UnimplementedError('schema types > than 255 bytes not supported');
+
+    bytesBuilder.addByte(schemaBytes.length);
+    bytesBuilder.add(schemaBytes);
+    bytesBuilder.add(input.payload);
+
+    return bytesBuilder.toBytes();
+  }
 }

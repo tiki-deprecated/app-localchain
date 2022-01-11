@@ -12,14 +12,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_secure_storage: ^4.2.0
   logging: ^1.0.1
-  pointycastle: ^3.4.0
-  sqflite: ^2.0.0+3
+  sqflite_sqlcipher: ^2.1.0
+
+dependency_overrides:
+  sqflite:
+    git:
+      url: https://www.github.com/davidmartos96/sqflite_sqlcipher.git
+      path: sqflite
+      ref: fmdb_override
 
 dev_dependencies:
-  test: ^1.17.10
+  flutter_test:
+    sdk: flutter
 
 flutter:
   assets:
-    - packages/localchain/src/db/db_create_tables.sql
+    - packages/localchain/src/db/sql/db_sql_create.sql
+    - packages/localchain/src/db/sql/db_sql_update_v2.sql

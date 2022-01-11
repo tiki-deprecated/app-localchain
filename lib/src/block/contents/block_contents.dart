@@ -5,14 +5,17 @@
 
 import 'dart:typed_data';
 
+import 'block_contents_schema.dart';
+
 abstract class BlockContents {
-  String schema;
+  final BlockContentsSchema _schema;
 
-  BlockContents({required this.schema});
+  BlockContents(this._schema);
 
-  BlockContents fromBytes(Uint8List bytes);
+  BlockContentsSchema get schema => _schema;
 
-  Uint8List toBytes();
+  Uint8List get payload;
 
+  @override
   String toString();
 }

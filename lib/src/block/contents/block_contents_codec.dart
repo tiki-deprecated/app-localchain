@@ -11,7 +11,7 @@ import 'block_contents_bytea.dart';
 import 'block_contents_json.dart';
 import 'block_contents_schema.dart';
 
-const BlockContentsCodec blockContents = BlockContentsCodec();
+const BlockContentsCodec contentsCodec = BlockContentsCodec();
 
 class BlockContentsCodec extends Codec<BlockContents, Uint8List> {
   const BlockContentsCodec();

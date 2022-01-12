@@ -18,11 +18,24 @@ class BlockRepository {
 
   BlockRepository(this._database);
 
-  Future<BlockModel> insert(BlockModel block) async {
-    int id = await _database.insert(_table, block.toMap(),
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action) =>
+      _database.transaction(action);
+
+  Future<BlockModel> insert(BlockModel block, {Transaction? txn}) async {
+    int id = await (txn ?? _database).insert(_table, block.toMap(),
         conflictAlgorithm: ConflictAlgorithm.fail);
     block.id = id;
     _log.finest('inserted: #' + id.toString());
+    return block;
+  }
+
+  Future<BlockModel> findLast({Transaction? txn}) async {
+    List<Map<String, Object?>> rows = await (txn ?? _database).query(_table,
+        columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
+        orderBy: 'id DESC',
+        limit: 1);
+    BlockModel block = BlockModel.fromMap(rows[0]);
+    _log.finest('last: ' + block.toString());
     return block;
   }
 
@@ -48,55 +61,24 @@ class BlockRepository {
     }
   }
 
-  /*Future<DbPage<BlockModel>> page(int pageNumber, int pageSize) async {
-    List<Map<String, Object?>> rows = await _database.query(table,
-        columns: [
-          'id',
-          'contents',
-          'signature',
-          'previous_hash',
-          'created_epoch'
-        ],
-        where: 'id > ?',
-        whereArgs: [pageNumber * pageSize],
-        limit: pageSize,
+  Future<List<BlockModel>> page(int number, int size,
+      {Transaction? txn}) async {
+    List<Map<String, Object?>> rows = await (txn ?? _database).query(_table,
+        columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
+        where: '"id" > ?',
+        whereArgs: [number * size],
+        limit: size,
         orderBy: 'id');
-    int tableSize = await count() ?? 0;
-
-    List<BlockModel> blocks = rows.isNotEmpty
+    _log.finest('page: ${rows.length} records');
+    return rows.isNotEmpty
         ? List.from(rows.map((row) => BlockModel.fromMap(row)))
         : List.empty();
-    DbPage<BlockModel> page = DbPage(
-        pageNumber: pageNumber,
-        pageSize: pageSize,
-        totalElements: tableSize,
-        totalPages: (tableSize / pageSize).ceil(),
-        elements: blocks);
-
-    _log.finest('page: ' + page.toString());
-    return page;
   }
 
-  Future<int?> count() async {
+  Future<int> count({Transaction? txn}) async {
     int? count = Sqflite.firstIntValue(
-        await _database.rawQuery('SELECT COUNT (*) from $table'));
+        await (txn ?? _database).rawQuery('SELECT COUNT (*) FROM $_table'));
     _log.finest('count: ' + count.toString());
-    return count;
+    return count ?? 0;
   }
-
-  Future<BlockModel> last() async {
-    List<Map<String, Object?>> rows = await _database.query(table,
-        columns: [
-          'id',
-          'contents',
-          'signature',
-          'previous_hash',
-          'created_epoch'
-        ],
-        orderBy: 'id DESC',
-        limit: 1);
-    BlockModel block = BlockModel.fromMap(rows[0]);
-    _log.finest('last: ' + block.toString());
-    return block;
-  }*/
 }

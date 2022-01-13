@@ -5,94 +5,114 @@
 
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:pointycastle/digests/sha256.dart';
-import 'package:sqflite/sqlite_api.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
-import '../crypto/crypto.dart' as crypto;
-import '../db/db_page.dart';
-import '../key_store/key_store_service.dart';
+import '../db/db_model_page.dart';
 import 'block_model.dart';
 import 'block_repository.dart';
-import 'contents/block_contents.dart';
 
 class BlockService {
-  final log = Logger('BlockService');
-  final BlockRepository _blockRepository;
-  final KeyStoreService _keyStoreService;
+  final _log = Logger('BlockService');
+  final BlockRepository _repository;
 
-  BlockService(Database database, this._keyStoreService)
-      : this._blockRepository = BlockRepository(database);
+  BlockService(Database database) : _repository = BlockRepository(database);
 
-  // TODO handle multiple sets of keys/users
-  Future<BlockModel> add(BlockContents blockContents) async {
-    Uint8List cipherText = crypto.rsaEncrypt(
-        _keyStoreService.dataKey!.publicKey, blockContents.toBytes());
-    Uint8List signature =
-        crypto.ecdsaSign(_keyStoreService.signKey!.privateKey, cipherText);
+  Future<BlockModel> add(Uint8List contents) =>
+      _repository.transaction<BlockModel>((txn) async {
+        BlockModel last = await _repository.findLast(txn: txn);
+        return _repository.insert(
+            BlockModel(
+                contents: contents,
+                created: DateTime.now(),
+                previousHash: _hash(last)),
+            txn: txn);
+      });
 
-    BlockModel last = await _blockRepository.last();
-    BlockModel inserted = await _blockRepository.insert(BlockModel(
-        contents: cipherText,
-        signature: signature,
-        previousHash: _hash(last),
-        created: DateTime.now()));
-    return inserted;
-  }
+  Future<DbModelPage<BlockModel>> page(int number, int size) => _repository
+      .transaction<DbModelPage<BlockModel>>((txn) => _page(number, size, txn));
 
-  Future<BlockModel> last() async => _blockRepository.last();
+  Future<void> validate({int pageSize = 100}) =>
+      _repository.transaction((txn) async {
+        DbModelPage<BlockModel> page = await _page(0, pageSize, txn);
+        while (page.pageNumber! < page.totalPages! && page.elements != null) {
+          for (BlockModel block in page.elements!)
+            await _validateBlock(block, txn);
+        }
+      });
 
-  Future<DbPage<BlockModel>> page(int pageNumber, int pageSize) async =>
-      _blockRepository.page(pageNumber, pageSize);
-
-  bool verifySignature(BlockModel block) {
-    try {
-      bool verified = crypto.ecdsaVerify(_keyStoreService.signKey!.publicKey,
-          block.signature!, block.contents!);
-      if (!verified) {
-        log.info("Block #" + block.id.toString() + " invalid signature");
-        return false;
-      }
-    } catch (_) {
-      log.info("Block #" + block.id.toString() + " invalid signature");
-      return false;
-    }
-    log.finest("Block #" + block.id.toString() + " valid signature");
-    return true;
-  }
-
-  bool verifyContents(BlockModel block) {
-    try {
-      crypto.rsaDecrypt(_keyStoreService.dataKey!.privateKey, block.contents!);
-      log.finest("Block #" + block.id.toString() + " valid contents");
-      return true;
-    } catch (_) {
-      log.info("Block #" + block.id.toString() + " invalid contents");
-      return false;
-    }
-  }
-
-  Future<bool> verifyHash(BlockModel block) async {
+  Future<void> _validateBlock(BlockModel block, Transaction txn) async {
     Uint8List hash = _hash(block);
-    List<BlockModel> next = await _blockRepository.findByPreviousHash(hash);
+    List<BlockModel> next =
+        await _repository.findByPreviousHash(hash, txn: txn);
     if (next.length == 0) {
-      log.info("Block #" + block.id.toString() + " no next block");
-      return false;
-    } else if (next.length > 1) {
-      log.info("Block #" + block.id.toString() + " multiple next blocks");
-      return false;
-    } else
-      log.finest("Block #" + block.id.toString() + " valid next block");
-    return true;
+      BlockModel last = await _repository.findLast(txn: txn);
+      Uint8List lastHash = _hash(last);
+      if (!ListEquality().equals(hash, lastHash))
+        throw StateError("Chain broken at Block ${block.id}, no child");
+    } else if (next.length > 1)
+      throw StateError("Chain illegally forks at Block ${block.id}");
+    _log.finest("Block ${block.id} verified");
+  }
+
+  Future<DbModelPage<BlockModel>> _page(
+      int number, int size, Transaction txn) async {
+    int count = await _repository.count(txn: txn);
+    if (count == 0)
+      return DbModelPage(
+          pageSize: size,
+          pageNumber: number,
+          totalElements: 0,
+          totalPages: 0,
+          elements: List.empty());
+    else {
+      List<BlockModel> blocks = await _repository.page(number, size, txn: txn);
+      return DbModelPage(
+          pageSize: size,
+          pageNumber: number,
+          totalElements: count,
+          totalPages: (count / size).ceil(),
+          elements: blocks);
+    }
+  }
+
+  // From pointycastle/src/utils
+  Uint8List _encodeBigInt(BigInt? number) {
+    if (number == BigInt.zero) {
+      return Uint8List.fromList([0]);
+    }
+
+    int needsPaddingByte;
+    int rawSize;
+
+    if (number! > BigInt.zero) {
+      rawSize = (number.bitLength + 7) >> 3;
+      needsPaddingByte = ((number >> (rawSize - 1) * 8) & BigInt.from(0x80)) ==
+              BigInt.from(0x80)
+          ? 1
+          : 0;
+    } else {
+      needsPaddingByte = 0;
+      rawSize = (number.bitLength + 8) >> 3;
+    }
+
+    final size = rawSize + needsPaddingByte;
+    var result = Uint8List(size);
+    for (var i = 0; i < rawSize; i++) {
+      result[size - i - 1] = (number! & BigInt.from(0xff)).toInt();
+      number = number >> 8;
+    }
+    return result;
   }
 
   Uint8List _hash(BlockModel block) {
     BytesBuilder bytesBuilder = BytesBuilder();
     bytesBuilder.add(block.contents!);
-    bytesBuilder.add(block.signature!);
     bytesBuilder.add(block.previousHash!);
-    bytesBuilder.add(crypto
-        .encodeBigInt(BigInt.from(block.created!.millisecondsSinceEpoch)));
+    bytesBuilder
+        .add(_encodeBigInt(BigInt.from(block.created!.millisecondsSinceEpoch)));
     return SHA256Digest().process(bytesBuilder.toBytes());
   }
 }

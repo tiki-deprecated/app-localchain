@@ -7,26 +7,32 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'block_contents.dart';
-import 'block_contents_codec.dart';
 import 'block_contents_schema.dart';
 
 class BlockContentsStart extends BlockContents {
   String? start;
 
-  BlockContentsStart({this.start}) : super(schema: BlockContentsSchema.start);
+  BlockContentsStart({this.start}) : super(BlockContentsSchema.start);
+
+  BlockContentsStart.payload(Uint8List bytes)
+      : start = utf8.decode(bytes),
+        super(BlockContentsSchema.start);
 
   @override
-  Uint8List toBytes() =>
-      encode(schema, Uint8List.fromList(utf8.encode(start!)));
-
-  @override
-  BlockContentsStart fromBytes(Uint8List bytes) {
-    this.start = utf8.decode(bytes.sublist(1 + schema.length));
-    return this;
-  }
+  Uint8List get payload => Uint8List.fromList(utf8.encode(start ?? ''));
 
   @override
   String toString() {
-    return 'BlockContentsBytea{schema:$schema, start:$start}';
+    return 'BlockContentsStart{_schema: $schema, start: $start}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockContentsStart &&
+          runtimeType == other.runtimeType &&
+          start == other.start;
+
+  @override
+  int get hashCode => start.hashCode;
 }

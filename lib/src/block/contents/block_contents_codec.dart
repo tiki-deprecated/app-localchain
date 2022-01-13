@@ -46,7 +46,7 @@ class BlockContentsEncoder extends Converter<BlockContents, Uint8List> {
     BytesBuilder bytesBuilder = BytesBuilder();
     Uint8List schemaBytes = input.schema.bytes;
     if (schemaBytes.length > 0xff)
-      throw UnimplementedError('schema types > than 255 bytes not supported');
+      throw StateError('schema types > than 255 bytes not supported');
 
     bytesBuilder.addByte(schemaBytes.length);
     bytesBuilder.add(schemaBytes);

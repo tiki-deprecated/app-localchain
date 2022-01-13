@@ -11,14 +11,14 @@ class BlockContentsSchema {
   static const BlockContentsSchema bytea = BlockContentsSchema(0);
   static const BlockContentsSchema start = BlockContentsSchema(1);
   static const BlockContentsSchema json = BlockContentsSchema(2);
-  static const BlockContentsSchema nft = BlockContentsSchema(3);
+  static const BlockContentsSchema uriNft = BlockContentsSchema(3);
   static const BlockContentsSchema dataNft = BlockContentsSchema(4);
 
   static const List<BlockContentsSchema> all = [
     bytea,
     start,
     json,
-    nft,
+    uriNft,
     dataNft
   ];
 

@@ -24,4 +24,14 @@ class BlockContentsBytea extends BlockContents {
   String toString() {
     return 'BlockContentsBytea{_schema: $schema, body: $body}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockContentsBytea &&
+          runtimeType == other.runtimeType &&
+          body.toString() == other.body.toString();
+
+  @override
+  int get hashCode => body.hashCode;
 }

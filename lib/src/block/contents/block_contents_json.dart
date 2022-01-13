@@ -25,4 +25,14 @@ class BlockContentsJson extends BlockContents {
   String toString() {
     return 'BlockContentsJson{_schema: $schema, json: $json}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockContentsJson &&
+          runtimeType == other.runtimeType &&
+          json == other.json;
+
+  @override
+  int get hashCode => json.hashCode;
 }

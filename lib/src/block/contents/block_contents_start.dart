@@ -25,4 +25,14 @@ class BlockContentsStart extends BlockContents {
   String toString() {
     return 'BlockContentsStart{_schema: $schema, start: $start}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockContentsStart &&
+          runtimeType == other.runtimeType &&
+          start == other.start;
+
+  @override
+  int get hashCode => start.hashCode;
 }

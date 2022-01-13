@@ -5,26 +5,24 @@
 
 import 'dart:typed_data';
 
-import 'package:localchain/src/db/db_model_page.dart';
 import 'package:pointycastle/digests/sha256.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+import '../db/db_model_page.dart';
 import 'block_model.dart';
 import 'block_repository.dart';
-import 'contents/block_contents.dart';
-import 'contents/block_contents_codec.dart';
 
 class BlockService {
   final BlockRepository _repository;
 
   BlockService(Database database) : _repository = BlockRepository(database);
 
-  Future<BlockModel> add(BlockContents contents) =>
+  Future<BlockModel> add(Uint8List contents) =>
       _repository.transaction<BlockModel>((txn) async {
         BlockModel last = await _repository.findLast(txn: txn);
         return _repository.insert(
             BlockModel(
-                contents: contentsCodec.encode(contents),
+                contents: contents,
                 created: DateTime.now(),
                 previousHash: _hash(last)),
             txn: txn);

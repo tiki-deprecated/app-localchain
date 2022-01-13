@@ -22,10 +22,9 @@ class BlockRepository {
       _database.transaction(action);
 
   Future<BlockModel> insert(BlockModel block, {Transaction? txn}) async {
-    int id = await (txn ?? _database).insert(_table, block.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.fail);
+    int id = await (txn ?? _database).insert(_table, block.toMap());
     block.id = id;
-    _log.finest('inserted: #' + id.toString());
+    _log.finest('inserted: #$id');
     return block;
   }
 
@@ -35,7 +34,7 @@ class BlockRepository {
         orderBy: 'id DESC',
         limit: 1);
     BlockModel block = BlockModel.fromMap(rows[0]);
-    _log.finest('last: ' + block.toString());
+    _log.finest('last: $block');
     return block;
   }
 
@@ -54,8 +53,7 @@ class BlockRepository {
       if (rows.isEmpty) return List.empty();
       List<BlockModel> blocks =
           rows.map((row) => BlockModel.fromMap(row)).toList();
-      _log.finest(
-          'findByPreviousHash: ' + blocks.length.toString() + " block(s)");
+      _log.finest('findByPreviousHash: ${blocks.length} block(s)');
       return blocks;
     } catch (error) {
       return List.empty();
@@ -79,7 +77,7 @@ class BlockRepository {
   Future<int> count({Transaction? txn}) async {
     int? count = Sqflite.firstIntValue(
         await (txn ?? _database).rawQuery('SELECT COUNT (*) FROM $_table'));
-    _log.finest('count: ' + count.toString());
+    _log.finest('count: $count');
     return count ?? 0;
   }
 }

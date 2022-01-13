@@ -19,3 +19,12 @@ CREATE TABLE IF NOT EXISTS block(
 
 INSERT INTO block (contents, previous_hash, created_epoch)
 VALUES ('_START_BLOCK', '', strftime('%s', 'now') * 1000);
+
+-- -----------------------------------------------------------------------
+-- VALIDATE
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS validate(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_epoch INTEGER NOT NULL,
+    pass_bool INTEGER
+);

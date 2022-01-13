@@ -39,9 +39,10 @@ class BlockRepository {
     return block;
   }
 
-  Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash) async {
+  Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash,
+      {Transaction? txn}) async {
     try {
-      List<Map<String, Object?>> rows = await _database.query(_table,
+      List<Map<String, Object?>> rows = await (txn ?? _database).query(_table,
           columns: [
             'id',
             'contents',

@@ -5,6 +5,8 @@
 
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
 import 'block_contents.dart';
 import 'block_contents_schema.dart';
 
@@ -30,7 +32,7 @@ class BlockContentsBytea extends BlockContents {
       identical(this, other) ||
       other is BlockContentsBytea &&
           runtimeType == other.runtimeType &&
-          body.toString() == other.body.toString();
+          ListEquality().equals(body, other.body);
 
   @override
   int get hashCode => body.hashCode;

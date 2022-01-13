@@ -5,6 +5,8 @@
 
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
 import 'package:pointycastle/digests/sha256.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -13,6 +15,7 @@ import 'block_model.dart';
 import 'block_repository.dart';
 
 class BlockService {
+  final _log = Logger('BlockService');
   final BlockRepository _repository;
 
   BlockService(Database database) : _repository = BlockRepository(database);
@@ -28,34 +31,51 @@ class BlockService {
             txn: txn);
       });
 
-  Future<DbModelPage<BlockModel>> page(int number, int size) =>
-      _repository.transaction<DbModelPage<BlockModel>>((txn) async {
-        int count = await _repository.count(txn: txn);
-        if (count == 0)
-          return DbModelPage(
-              pageSize: size,
-              pageNumber: number,
-              totalElements: 0,
-              totalPages: 0,
-              elements: List.empty());
-        else {
-          List<BlockModel> blocks = await _repository.page(number, size);
-          return DbModelPage(
-              pageSize: size,
-              pageNumber: number,
-              totalElements: count,
-              totalPages: (count / size).ceil(),
-              elements: blocks);
+  Future<DbModelPage<BlockModel>> page(int number, int size) => _repository
+      .transaction<DbModelPage<BlockModel>>((txn) => _page(number, size, txn));
+
+  Future<void> validate({int pageSize = 100}) =>
+      _repository.transaction((txn) async {
+        DbModelPage<BlockModel> page = await _page(0, pageSize, txn);
+        while (page.pageNumber! < page.totalPages! && page.elements != null) {
+          for (BlockModel block in page.elements!)
+            await _validateBlock(block, txn);
         }
       });
 
-  Uint8List _hash(BlockModel block) {
-    BytesBuilder bytesBuilder = BytesBuilder();
-    bytesBuilder.add(block.contents!);
-    bytesBuilder.add(block.previousHash!);
-    bytesBuilder
-        .add(_encodeBigInt(BigInt.from(block.created!.millisecondsSinceEpoch)));
-    return SHA256Digest().process(bytesBuilder.toBytes());
+  Future<void> _validateBlock(BlockModel block, Transaction txn) async {
+    Uint8List hash = _hash(block);
+    List<BlockModel> next =
+        await _repository.findByPreviousHash(hash, txn: txn);
+    if (next.length == 0) {
+      BlockModel last = await _repository.findLast(txn: txn);
+      Uint8List lastHash = _hash(last);
+      if (!ListEquality().equals(hash, lastHash))
+        throw StateError("Chain broken at Block ${block.id}, no child");
+    } else if (next.length > 1)
+      throw StateError("Chain illegally forks at Block ${block.id}");
+    _log.finest("Block ${block.id} verified");
+  }
+
+  Future<DbModelPage<BlockModel>> _page(
+      int number, int size, Transaction txn) async {
+    int count = await _repository.count(txn: txn);
+    if (count == 0)
+      return DbModelPage(
+          pageSize: size,
+          pageNumber: number,
+          totalElements: 0,
+          totalPages: 0,
+          elements: List.empty());
+    else {
+      List<BlockModel> blocks = await _repository.page(number, size, txn: txn);
+      return DbModelPage(
+          pageSize: size,
+          pageNumber: number,
+          totalElements: count,
+          totalPages: (count / size).ceil(),
+          elements: blocks);
+    }
   }
 
   // From pointycastle/src/utils
@@ -87,25 +107,12 @@ class BlockService {
     return result;
   }
 
-  // From pointycastle/src/utils
-  BigInt _decodeBigInt(List<int> bytes) {
-    var negative = bytes.isNotEmpty && bytes[0] & 0x80 == 0x80;
-
-    BigInt result;
-
-    if (bytes.length == 1) {
-      result = BigInt.from(bytes[0]);
-    } else {
-      result = BigInt.zero;
-      for (var i = 0; i < bytes.length; i++) {
-        var item = bytes[bytes.length - i - 1];
-        result |= (BigInt.from(item) << (8 * i));
-      }
-    }
-    return result != BigInt.zero
-        ? negative
-            ? result.toSigned(result.bitLength)
-            : result
-        : BigInt.zero;
+  Uint8List _hash(BlockModel block) {
+    BytesBuilder bytesBuilder = BytesBuilder();
+    bytesBuilder.add(block.contents!);
+    bytesBuilder.add(block.previousHash!);
+    bytesBuilder
+        .add(_encodeBigInt(BigInt.from(block.created!.millisecondsSinceEpoch)));
+    return SHA256Digest().process(bytesBuilder.toBytes());
   }
 }

@@ -3,6 +3,7 @@
  * MIT license. See LICENSE file in root directory.
  */
 
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,7 +21,7 @@ void main() {
       BlockRepository blockRepository = BlockRepository(database);
       BlockModel model = await blockRepository.insert(BlockModel(
           contents: Uint8List.fromList([0, 1, 2, 3, 4]),
-          previousHash: Uint8List.fromList([0, 1, 2, 3, 4]),
+          previousHash: Uint8List.fromList([0]),
           created: DateTime.now()));
       expect(model.id != null, true);
     });
@@ -28,13 +29,14 @@ void main() {
     test('findByPreviousHash_success', () async {
       Database database = await db.open('address');
       BlockRepository blockRepository = BlockRepository(database);
+      int prev = Random().nextInt(255);
       await blockRepository.insert(BlockModel(
           contents: Uint8List.fromList([0, 1, 2, 3, 4]),
-          previousHash: Uint8List.fromList([0, 1, 2, 3, 4]),
+          previousHash: Uint8List.fromList([prev]),
           created: DateTime.now()));
-      List<BlockModel> models = await blockRepository
-          .findByPreviousHash(Uint8List.fromList([0, 1, 2, 3, 4]));
-      expect(models.length > 0, true);
+      List<BlockModel> models =
+          await blockRepository.findByPreviousHash(Uint8List.fromList([prev]));
+      expect(1, models.length);
     });
   });
 }

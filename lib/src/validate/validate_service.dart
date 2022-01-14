@@ -14,7 +14,7 @@ class ValidateService {
   ValidateService(Database database)
       : _repository = ValidateRepository(database);
 
-  Future<ValidateModel> get last => _repository.findLast();
+  Future<ValidateModel?> get last => _repository.findLast();
 
   Future<ValidateModel> start() =>
       _repository.insert(ValidateModel(started: DateTime.now()));

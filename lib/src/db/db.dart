@@ -40,10 +40,10 @@ void _onDowngrade(Database db, int oldVersion, int newVersion) =>
 Future<void> _onOpen(Database db, {Duration? validate}) async {
   _log.info('open');
   ValidateService validateService = ValidateService(db);
-  ValidateModel last = await validateService.last;
-  if (last.started == null ||
+  ValidateModel? last = await validateService.last;
+  if (last?.started == null ||
       DateTime.now()
-              .difference(last.started!)
+              .difference(last!.started!)
               .compareTo(validate ?? Duration(days: 30)) >=
           0 ||
       last.didPass != true) {

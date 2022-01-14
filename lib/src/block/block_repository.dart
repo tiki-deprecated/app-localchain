@@ -28,14 +28,16 @@ class BlockRepository {
     return block;
   }
 
-  Future<BlockModel> findLast({Transaction? txn}) async {
+  Future<BlockModel?> findLast({Transaction? txn}) async {
     List<Map<String, Object?>> rows = await (txn ?? _database).query(_table,
         columns: ['id', 'contents', 'previous_hash', 'created_epoch'],
         orderBy: 'id DESC',
         limit: 1);
-    BlockModel block = BlockModel.fromMap(rows[0]);
-    _log.finest('last: $block');
-    return block;
+    if (rows.isNotEmpty) {
+      BlockModel block = BlockModel.fromMap(rows[0]);
+      _log.finest('last: $block');
+      return block;
+    }
   }
 
   Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash,

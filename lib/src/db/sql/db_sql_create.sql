@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS block(
 );
 
 INSERT INTO block (contents, previous_hash, created_epoch)
-VALUES ('_START_BLOCK', '', strftime('%s', 'now') * 1000);
+VALUES (x'5f53544152545f424c4f434b', x'00', strftime('%s', 'now') * 1000);
 
 -- -----------------------------------------------------------------------
 -- VALIDATE

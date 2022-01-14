@@ -13,7 +13,7 @@ class ValidateModel {
   ValidateModel.fromMap(Map<String, dynamic>? map) {
     if (map != null) {
       this.id = map['id'];
-      if (map['passed_bool'] != null)
+      if (map['pass_bool'] != null)
         this.didPass = map['pass_bool'] == 1 ? true : false;
       if (map['started_epoch'] != null)
         this.started =

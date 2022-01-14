@@ -3,9 +3,10 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-import 'validate_model.dart';
 import 'package:logging/logging.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+
+import 'validate_model.dart';
 
 class ValidateRepository {
   static const String _table = 'validate';
@@ -32,13 +33,15 @@ class ValidateRepository {
     return block;
   }
 
-  Future<ValidateModel> findLast({Transaction? txn}) async {
+  Future<ValidateModel?> findLast({Transaction? txn}) async {
     List<Map<String, Object?>> rows = await (txn ?? _database).query(_table,
-        columns: ['id', 'started_epoch', 'passed_bool'],
+        columns: ['id', 'started_epoch', 'pass_bool'],
         orderBy: 'id DESC',
         limit: 1);
-    ValidateModel validate = ValidateModel.fromMap(rows[0]);
-    _log.finest('last: $validate');
-    return validate;
+    if (rows.isNotEmpty) {
+      ValidateModel validate = ValidateModel.fromMap(rows[0]);
+      _log.finest('last: $validate');
+      return validate;
+    }
   }
 }

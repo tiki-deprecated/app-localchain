@@ -22,7 +22,8 @@ class BlockService {
 
   Future<BlockModel> add(Uint8List contents) =>
       _repository.transaction<BlockModel>((txn) async {
-        BlockModel last = await _repository.findLast(txn: txn);
+        BlockModel? last = await _repository.findLast(txn: txn);
+        if (last == null) throw StateError("Failed to find last Block");
         return _repository.insert(
             BlockModel(
                 contents: contents,
@@ -37,18 +38,26 @@ class BlockService {
   Future<void> validate({int pageSize = 100}) =>
       _repository.transaction((txn) async {
         DbModelPage<BlockModel> page = await _page(0, pageSize, txn);
-        while (page.pageNumber! < page.totalPages! && page.elements != null) {
-          for (BlockModel block in page.elements!)
-            await _validateBlock(block, txn);
+        await _validatePage(page, txn);
+        while (
+            page.pageNumber! < page.totalPages! - 1 && page.elements != null) {
+          await _validatePage(page, txn);
+          page = await _page(page.pageNumber! + 1, pageSize, txn);
         }
       });
+
+  Future<void> _validatePage(
+      DbModelPage<BlockModel> page, Transaction txn) async {
+    for (BlockModel block in page.elements!) await _validateBlock(block, txn);
+  }
 
   Future<void> _validateBlock(BlockModel block, Transaction txn) async {
     Uint8List hash = _hash(block);
     List<BlockModel> next =
         await _repository.findByPreviousHash(hash, txn: txn);
     if (next.length == 0) {
-      BlockModel last = await _repository.findLast(txn: txn);
+      BlockModel? last = await _repository.findLast(txn: txn);
+      if (last == null) throw StateError("Failed to find last Block");
       Uint8List lastHash = _hash(last);
       if (!ListEquality().equals(hash, lastHash))
         throw StateError("Chain broken at Block ${block.id}, no child");

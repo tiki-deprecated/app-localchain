@@ -3,46 +3,22 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'block_contents.dart';
 import 'block_contents_bytea.dart';
+import 'block_contents_data_nft.dart';
 import 'block_contents_json.dart';
 import 'block_contents_schema.dart';
+import 'block_contents_start.dart';
+import 'block_contents_uri_nft.dart';
 
 const BlockContentsCodec contentsCodec = BlockContentsCodec();
 
-class BlockContentsCodec extends Codec<BlockContents, Uint8List> {
+class BlockContentsCodec {
   const BlockContentsCodec();
 
-  @override
-  Converter<Uint8List, BlockContents> get decoder => BlockContentsDecoder();
-
-  @override
-  Converter<BlockContents, Uint8List> get encoder => BlockContentsEncoder();
-}
-
-class BlockContentsDecoder extends Converter<Uint8List, BlockContents> {
-  @override
-  BlockContents convert(Uint8List input) {
-    BlockContentsSchema? schema =
-        BlockContentsSchema.fromBytes(input.sublist(1, 1 + input[0]));
-    Uint8List payload = input.sublist(1 + input[0]);
-
-    switch (schema) {
-      case BlockContentsSchema.json:
-        return BlockContentsJson.payload(payload);
-      case BlockContentsSchema.bytea:
-      default:
-        return BlockContentsBytea.payload(payload);
-    }
-  }
-}
-
-class BlockContentsEncoder extends Converter<BlockContents, Uint8List> {
-  @override
-  Uint8List convert(BlockContents input) {
+  Uint8List encode(BlockContents input) {
     BytesBuilder bytesBuilder = BytesBuilder();
     Uint8List schemaBytes = input.schema.bytes;
     if (schemaBytes.length > 0xff)
@@ -53,5 +29,29 @@ class BlockContentsEncoder extends Converter<BlockContents, Uint8List> {
     bytesBuilder.add(input.payload);
 
     return bytesBuilder.toBytes();
+  }
+
+  BlockContentsSchema? schema(Uint8List input) {
+    return BlockContentsSchema.fromBytes(input.sublist(1, 1 + input[0]));
+  }
+
+  dynamic decode(Uint8List input) {
+    BlockContentsSchema? contentsSchema = schema(input);
+    Uint8List payload = input.sublist(1 + input[0]);
+
+    switch (contentsSchema) {
+      case BlockContentsSchema.json:
+        return BlockContentsJson.payload(payload);
+      case BlockContentsSchema.bytea:
+        return BlockContentsBytea.payload(payload);
+      case BlockContentsSchema.start:
+        return BlockContentsStart.payload(payload);
+      case BlockContentsSchema.dataNft:
+        return BlockContentsDataNft.payload(payload);
+      case BlockContentsSchema.uriNft:
+        return BlockContentsUriNft.payload(payload);
+      default:
+        return BlockContentsBytea.payload(payload);
+    }
   }
 }

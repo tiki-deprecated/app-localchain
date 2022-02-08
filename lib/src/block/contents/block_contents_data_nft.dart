@@ -18,22 +18,33 @@ class BlockContentsDataNft extends BlockContents {
 
   BlockContentsDataNft.payload(Uint8List bytes)
       : super(BlockContentsSchema.uriNft) {
-    int fpLen = bytes.elementAt(0);
-    Uint8List fpBytes = bytes.sublist(1, 1 + fpLen);
-    int pLen = bytes.elementAt(1 + fpLen);
-    Uint8List pBytes = bytes.sublist(2 + fpLen, 2 + fpLen + pLen);
-    fingerprint = utf8.decode(fpBytes);
-    proof = utf8.decode(pBytes);
+    try {
+      int fpLen = bytes.elementAt(0);
+      Uint8List fpBytes = bytes.sublist(1, 1 + fpLen);
+      int pLen = bytes.elementAt(1 + fpLen);
+      Uint8List pBytes = bytes.sublist(2 + fpLen, 2 + fpLen + pLen);
+      fingerprint = utf8.decode(fpBytes);
+      proof = utf8.decode(pBytes);
+    } catch (error) {
+      throw FormatException('failed to decode block', bytes);
+    }
   }
 
   @override
   Uint8List get payload {
     BytesBuilder builder = BytesBuilder();
+    if (fingerprint == null) throw FormatException('fingerprint required');
+    if (proof == null) throw FormatException('proof required');
+
     Uint8List fpBytes = Uint8List.fromList(utf8.encode(fingerprint!));
     Uint8List pBytes = Uint8List.fromList(utf8.encode(proof!));
 
-    if (fpBytes.length > 255 || pBytes.length > 255)
-      throw StateError('byte[] length of proof and fingerprint must be < 255');
+    if (fpBytes.length > 255)
+      throw FormatException(
+          'fingerprint byte[] length must be < 255', fingerprint);
+
+    if (pBytes.length > 255)
+      throw FormatException('proof byte[] length must be < 255', proof);
 
     builder.addByte(fpBytes.length);
     builder.add(fpBytes);

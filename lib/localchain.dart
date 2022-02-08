@@ -14,3 +14,10 @@ export 'src/block/contents/block_contents_start.dart';
 export 'src/block/contents/block_contents_uri_nft.dart';
 export 'src/db/db.dart';
 export 'src/db/db_model_page.dart';
+
+// construct
+// (Factory style) open (which should open db & call back when done?)
+// getBlock/(s)
+// addBlock
+// validate chain
+// validate block

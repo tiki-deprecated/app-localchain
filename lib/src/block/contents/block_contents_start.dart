@@ -15,8 +15,13 @@ class BlockContentsStart extends BlockContents {
   BlockContentsStart({this.start}) : super(BlockContentsSchema.start);
 
   BlockContentsStart.payload(Uint8List bytes)
-      : start = utf8.decode(bytes),
-        super(BlockContentsSchema.start);
+      : super(BlockContentsSchema.start) {
+    try {
+      start = utf8.decode(bytes);
+    } catch (error) {
+      throw FormatException('failed to decode block', bytes);
+    }
+  }
 
   @override
   Uint8List get payload => Uint8List.fromList(utf8.encode(start ?? ''));

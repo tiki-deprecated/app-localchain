@@ -14,9 +14,22 @@ class BlockContentsUriNft extends BlockContents {
 
   BlockContentsUriNft({this.uri}) : super(BlockContentsSchema.uriNft);
 
+  BlockContentsUriNft.path(String path) : super(BlockContentsSchema.uriNft) {
+    try {
+      uri = Uri.parse(path);
+    } catch (error) {
+      throw FormatException('failed to parse path', path);
+    }
+  }
+
   BlockContentsUriNft.payload(Uint8List bytes)
-      : uri = Uri.parse(utf8.decode(bytes)),
-        super(BlockContentsSchema.uriNft);
+      : super(BlockContentsSchema.uriNft) {
+    try {
+      uri = Uri.parse(utf8.decode(bytes));
+    } catch (error) {
+      throw FormatException('failed to decode block', bytes);
+    }
+  }
 
   @override
   Uint8List get payload => Uint8List.fromList(utf8.encode(uri.toString()));

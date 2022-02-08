@@ -14,9 +14,21 @@ class BlockContentsJson extends BlockContents {
 
   BlockContentsJson({this.json}) : super(BlockContentsSchema.json);
 
-  BlockContentsJson.payload(Uint8List bytes)
-      : json = utf8.decode(bytes),
-        super(BlockContentsSchema.json);
+  BlockContentsJson.raw(dynamic raw) : super(BlockContentsSchema.json) {
+    try {
+      json = jsonEncode(raw);
+    } catch (error) {
+      throw FormatException('failed to encode json', raw);
+    }
+  }
+
+  BlockContentsJson.payload(Uint8List bytes) : super(BlockContentsSchema.json) {
+    try {
+      json = utf8.decode(bytes);
+    } catch (error) {
+      throw FormatException('failed to decode block', bytes);
+    }
+  }
 
   @override
   Uint8List get payload => Uint8List.fromList(utf8.encode(json!));

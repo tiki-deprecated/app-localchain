@@ -22,7 +22,8 @@ class BlockContentsCodec {
     BytesBuilder bytesBuilder = BytesBuilder();
     Uint8List schemaBytes = input.schema.bytes;
     if (schemaBytes.length > 0xff)
-      throw StateError('schema types > than 255 bytes not supported');
+      throw FormatException(
+          'schema types > than 255 bytes not supported', input);
 
     bytesBuilder.addByte(schemaBytes.length);
     bytesBuilder.add(schemaBytes);
@@ -32,11 +33,17 @@ class BlockContentsCodec {
   }
 
   BlockContentsSchema? schema(Uint8List input) {
-    return BlockContentsSchema.fromBytes(input.sublist(1, 1 + input[0]));
+    try {
+      return BlockContentsSchema.fromBytes(input.sublist(1, 1 + input[0]));
+    } catch (error) {
+      throw FormatException('failed to decode schema', input, 0);
+    }
   }
 
   dynamic decode(Uint8List input) {
     BlockContentsSchema? contentsSchema = schema(input);
+    if (contentsSchema == null)
+      throw FormatException('cannot decode block, no schema', input, 0);
     Uint8List payload = input.sublist(1 + input[0]);
 
     switch (contentsSchema) {

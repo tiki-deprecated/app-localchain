@@ -30,10 +30,11 @@ class BlockContentsBytea extends BlockContents {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BlockContentsBytea &&
+      super == other &&
+          other is BlockContentsBytea &&
           runtimeType == other.runtimeType &&
           ListEquality().equals(body, other.body);
 
   @override
-  int get hashCode => body.hashCode;
+  int get hashCode => super.hashCode ^ body.hashCode;
 }

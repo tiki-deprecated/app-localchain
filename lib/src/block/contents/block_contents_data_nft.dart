@@ -17,7 +17,7 @@ class BlockContentsDataNft extends BlockContents {
       : super(BlockContentsSchema.dataNft);
 
   BlockContentsDataNft.payload(Uint8List bytes)
-      : super(BlockContentsSchema.uriNft) {
+      : super(BlockContentsSchema.dataNft) {
     try {
       int fpLen = bytes.elementAt(0);
       Uint8List fpBytes = bytes.sublist(1, 1 + fpLen);
@@ -61,11 +61,12 @@ class BlockContentsDataNft extends BlockContents {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BlockContentsDataNft &&
+      super == other &&
+          other is BlockContentsDataNft &&
           runtimeType == other.runtimeType &&
           fingerprint == other.fingerprint &&
           proof == other.proof;
 
   @override
-  int get hashCode => fingerprint.hashCode ^ proof.hashCode;
+  int get hashCode => super.hashCode ^ fingerprint.hashCode ^ proof.hashCode;
 }

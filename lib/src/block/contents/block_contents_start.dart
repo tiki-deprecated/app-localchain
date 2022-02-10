@@ -34,10 +34,11 @@ class BlockContentsStart extends BlockContents {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BlockContentsStart &&
+      super == other &&
+          other is BlockContentsStart &&
           runtimeType == other.runtimeType &&
           start == other.start;
 
   @override
-  int get hashCode => start.hashCode;
+  int get hashCode => super.hashCode ^ start.hashCode;
 }

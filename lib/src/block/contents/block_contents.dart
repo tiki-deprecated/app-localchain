@@ -20,8 +20,12 @@ abstract class BlockContents {
   String toString();
 
   @override
-  bool operator ==(Object other);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockContents &&
+          runtimeType == other.runtimeType &&
+          _schema == other._schema;
 
   @override
-  int get hashCode;
+  int get hashCode => _schema.hashCode;
 }

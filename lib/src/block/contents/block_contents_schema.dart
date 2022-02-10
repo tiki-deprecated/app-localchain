@@ -13,13 +13,15 @@ class BlockContentsSchema {
   static const BlockContentsSchema json = BlockContentsSchema(2);
   static const BlockContentsSchema uriNft = BlockContentsSchema(3);
   static const BlockContentsSchema dataNft = BlockContentsSchema(4);
+  static const BlockContentsSchema confirm = BlockContentsSchema(5);
 
   static const List<BlockContentsSchema> all = [
     bytea,
     start,
     json,
     uriNft,
-    dataNft
+    dataNft,
+    confirm
   ];
 
   const BlockContentsSchema(this._code);

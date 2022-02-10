@@ -5,6 +5,8 @@
 
 import 'dart:typed_data';
 
+import 'package:localchain/src/block/contents/block_contents_confirm.dart';
+
 import 'block_contents.dart';
 import 'block_contents_bytea.dart';
 import 'block_contents_data_nft.dart';
@@ -57,6 +59,8 @@ class BlockContentsCodec {
         return BlockContentsDataNft.payload(payload);
       case BlockContentsSchema.uriNft:
         return BlockContentsUriNft.payload(payload);
+      case BlockContentsSchema.confirm:
+        return BlockContentsConfirm.payload(payload);
       default:
         return BlockContentsBytea.payload(payload);
     }

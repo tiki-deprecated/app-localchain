@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:localchain/localchain.dart';
+import 'package:localchain/src/block/contents/block_contents_confirm.dart';
 
 void main() {
   setUp(() {});
@@ -126,7 +127,7 @@ void main() {
     });
   });
 
-  group('BlockContentsDataUriNft Tests', () {
+  group('BlockContentsUriNft Tests', () {
     test('payload_success', () async {
       Uri uri = Uri.parse('https://mytiki.com');
       BlockContentsUriNft contents = BlockContentsUriNft(uri: uri);
@@ -147,6 +148,35 @@ void main() {
       Uint8List randomData = Uint8List(randSize);
       for (int i = 0; i < randSize; i++) randomData[i] = random.nextInt(256);
       expect(() => BlockContentsUriNft.payload(randomData),
+          throwsA(isA<FormatException>()));
+    });
+  });
+
+  group('BlockContentsConfirm Tests', () {
+    test('payload_success', () async {
+      String txn = 'hello';
+      DateTime timestamp = DateTime.now();
+      BlockContentsConfirm contents =
+          BlockContentsConfirm(txn: txn, timestamp: timestamp);
+      BlockContentsConfirm decoded =
+          BlockContentsConfirm.payload(contents.payload);
+      expect(txn, decoded.txn);
+      expect(timestamp, decoded.timestamp);
+      expect(contents, decoded);
+    });
+
+    test('payload_encode_fail', () async {
+      String txn = 'hello';
+      expect(() => BlockContentsConfirm(txn: txn).payload,
+          throwsA(isA<FormatException>()));
+    });
+
+    test('payload_decode_fail', () async {
+      int randSize = 20;
+      Random random = Random();
+      Uint8List randomData = Uint8List(randSize);
+      for (int i = 0; i < randSize; i++) randomData[i] = random.nextInt(256);
+      expect(() => BlockContentsConfirm.payload(randomData),
           throwsA(isA<FormatException>()));
     });
   });

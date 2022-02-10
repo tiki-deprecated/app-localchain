@@ -42,10 +42,11 @@ class BlockContentsUriNft extends BlockContents {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BlockContentsUriNft &&
+      super == other &&
+          other is BlockContentsUriNft &&
           runtimeType == other.runtimeType &&
           uri == other.uri;
 
   @override
-  int get hashCode => uri.hashCode;
+  int get hashCode => super.hashCode ^ uri.hashCode;
 }

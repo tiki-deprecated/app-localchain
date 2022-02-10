@@ -41,10 +41,11 @@ class BlockContentsJson extends BlockContents {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is BlockContentsJson &&
+      super == other &&
+          other is BlockContentsJson &&
           runtimeType == other.runtimeType &&
           json == other.json;
 
   @override
-  int get hashCode => json.hashCode;
+  int get hashCode => super.hashCode ^ json.hashCode;
 }

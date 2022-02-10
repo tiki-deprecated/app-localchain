@@ -38,5 +38,28 @@ void main() {
           await blockRepository.findByPreviousHash(Uint8List.fromList([prev]));
       expect(1, models.length);
     });
+
+    test('count_success', () async {
+      Database database = await db.open('address');
+      BlockRepository blockRepository = BlockRepository(database);
+      int count = await blockRepository.count();
+      expect(count > 1, true);
+    });
+
+    test('page_success', () async {
+      Database database = await db.open('address');
+      BlockRepository blockRepository = BlockRepository(database);
+      int count = await blockRepository.count();
+      List<BlockModel> page = await blockRepository.page(0, 100);
+      expect(page.length, count);
+    });
+
+    test('findLast_success', () async {
+      Database database = await db.open('address');
+      BlockRepository blockRepository = BlockRepository(database);
+      List<BlockModel> page = await blockRepository.page(0, 100);
+      BlockModel? last = await blockRepository.findLast();
+      expect(last, page.last);
+    });
   });
 }

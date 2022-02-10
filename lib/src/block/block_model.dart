@@ -5,6 +5,8 @@
 
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+
 class BlockModel {
   int? id;
   Uint8List? contents;
@@ -33,6 +35,23 @@ class BlockModel {
 
   @override
   String toString() {
-    return 'BlockModel{contents: $contents, previousHash: $previousHash, created: $created}';
+    return 'BlockModel{id: $id, contents: $contents, previousHash: $previousHash, created: $created}';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          listEquals(contents, other.contents) &&
+          listEquals(previousHash, other.previousHash) &&
+          created == other.created;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      contents.hashCode ^
+      previousHash.hashCode ^
+      created.hashCode;
 }

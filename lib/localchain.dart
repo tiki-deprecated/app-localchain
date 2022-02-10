@@ -1,132 +1,83 @@
-library localchain;
+/*
+ * Copyright (c) TIKI Inc.
+ * MIT license. See LICENSE file in root directory.
+ */
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:typed_data';
+
+import 'package:localchain/src/db/db_model_page.dart';
 import 'package:logging/logging.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
+import 'src/block/block.dart';
 import 'src/block/block_model.dart';
-import 'src/block/block_repository.dart';
 import 'src/block/block_service.dart';
-import 'src/block/contents/block_contents.dart';
-import 'src/cache/cache_model.dart';
-import 'src/cache/cache_model_response.dart';
-import 'src/cache/cache_repository.dart';
-import 'src/cache/cache_service.dart';
-import 'src/crypto/crypto.dart' as crypto;
-import 'src/db/db_config.dart';
-import 'src/db/db_page.dart';
-import 'src/key_store/key_store_exception.dart';
-import 'src/key_store/key_store_service.dart';
+import 'src/block/contents/block_contents_codec.dart';
+import 'src/db/db.dart' as db;
 
-export 'src/block/block_model.dart';
+export 'src/block/block.dart';
 export 'src/block/contents/block_contents.dart';
 export 'src/block/contents/block_contents_bytea.dart';
+export 'src/block/contents/block_contents_codec.dart';
+export 'src/block/contents/block_contents_data_nft.dart';
 export 'src/block/contents/block_contents_json.dart';
+export 'src/block/contents/block_contents_schema.dart';
 export 'src/block/contents/block_contents_start.dart';
-export 'src/cache/cache_model.dart';
-export 'src/cache/cache_model_response.dart';
-export 'src/key_store/key_store_model.dart';
+export 'src/block/contents/block_contents_uri_nft.dart';
 
 class Localchain {
-  static const int _pageSize = 100;
-  final log = Logger('Localchain');
-  final DbConfig _dbConfig = DbConfig();
-  final KeyStoreService keystore;
-  late final CacheService _cacheService;
+  final Logger _log = Logger('localchain');
   late final BlockService _blockService;
 
-  Localchain({FlutterSecureStorage? secureStorage})
-      : this.keystore = KeyStoreService(secureStorage: secureStorage);
-
-  Future<void> open(
-      {Function(bool isOpen)? onComplete, bool overwrite = true}) async {
-    await _dbConfig.init(keystore);
-    this._cacheService = CacheService(_dbConfig.database);
-    this._blockService = BlockService(_dbConfig.database, keystore);
-    verify().then((bool isVerified) async {
-      bool isOpen = true;
-      if (!isVerified && overwrite) {
-        await _dbConfig.database.delete(BlockRepository.table);
-        await _dbConfig.database.delete(CacheRepository.table);
-        await _dbConfig.firstBlock(keystore, _dbConfig.database);
-      } else if (!isVerified) {
-        await _dbConfig.database.close();
-        isOpen = false;
-      }
-      if (onComplete != null) await onComplete(isOpen);
-    });
+  Future<Localchain> open(String address,
+      {String? password, Duration? validate}) async {
+    Database database = await db.open(address,
+        password: password, validate: validate ?? Duration(days: 30));
+    _blockService = BlockService(database);
+    return this;
   }
 
-  Future<BlockModel> add(BlockContents blockContents) async {
-    _keyGuard();
-    BlockModel block = await _blockService.add(blockContents);
-    await _cacheService.insert(CacheModel(
-        contents: blockContents.toBytes(),
-        cached: DateTime.now(),
-        block: block));
-    return block;
+  static BlockContentsCodec get codec => contentsCodec;
+
+  Future<Block> append(Uint8List contents) async {
+    BlockModel model = await _blockService.add(contents);
+    return Block(
+        contents: model.contents,
+        previousHash: model.previousHash,
+        created: model.created);
   }
 
-  Future<CacheModelResponse?> get(int id) => _cacheService.get(id);
-
-  Future<bool> verify() async {
-    _keyGuard();
+  Future<bool> validate({int pageSize = 100}) async {
     try {
-      BlockModel last = await _blockService.last();
-      DbPage<BlockModel> page = await _blockService.page(0, _pageSize);
-      while (page.pageNumber! < page.totalPages!) {
-        for (BlockModel block in page.elements) {
-          if (!_blockService.verifySignature(block)) return false;
-          if (!_blockService.verifyContents(block)) return false;
-          if (block.id != last.id && !await _blockService.verifyHash(block))
-            return false;
-          log.finest("Block #" + block.id.toString() + " passed verification");
-        }
-        page = await _blockService.page(page.pageNumber! + 1, _pageSize);
-      }
-      log.info("Chain passed verification");
+      await _blockService.validate(pageSize: pageSize);
       return true;
-    } catch (e) {
-      log.info("Chain failed verification", e);
+    } catch (error) {
+      _log.severe('failed to validate localchain', error);
       return false;
     }
   }
 
-  Future<bool> refresh() async {
-    _keyGuard();
-    try {
-      await _cacheService.drop();
-      BlockModel last = await _blockService.last();
-      DbPage<BlockModel> page = await _blockService.page(0, _pageSize);
-      while (page.pageNumber! < page.totalPages!) {
-        for (BlockModel block in page.elements) {
-          if (!_blockService.verifySignature(block)) return false;
-          if (last.id != block.id && !await _blockService.verifyHash(block))
-            return false;
-          try {
-            await _cacheService.insert(CacheModel(
-                contents: crypto.rsaDecrypt(
-                    keystore.dataKey!.privateKey, block.contents!),
-                cached: DateTime.now(),
-                block: block));
-          } catch (_) {
-            log.info("Failed to cache Block #" + block.id.toString());
-            return false;
-          }
-          log.finest("Block #" + block.id.toString() + " cached");
-        }
-        page = await _blockService.page(page.pageNumber! + 1, _pageSize);
+  Future<List<Block>> get(
+      {int pageSize = 100, void Function(List<Block>)? onPage}) async {
+    int pageNum = 0;
+    int totalPages = 1;
+    List<Block> chain = List.empty(growable: true);
+    while (pageNum < totalPages) {
+      DbModelPage<BlockModel> page =
+          await _blockService.page(pageNum, pageSize);
+      if (page.elements != null) {
+        List<Block> blocks = page.elements!
+            .map((block) => Block(
+                contents: block.contents,
+                previousHash: block.previousHash,
+                created: block.created))
+            .toList();
+        if (onPage != null) onPage(blocks);
+        chain.addAll(blocks);
       }
-      log.info("Cache refresh success");
-      return true;
-    } catch (e) {
-      log.info("Cache refresh failed", e);
-      return false;
+      pageNum++;
+      totalPages = page.totalPages ?? pageNum;
     }
-  }
-
-  void _keyGuard() {
-    if (keystore.signKey == null || keystore.dataKey == null)
-      throw KeyStoreException("Missing required keys",
-          address: keystore.active?.address);
+    return chain;
   }
 }

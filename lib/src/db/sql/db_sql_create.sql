@@ -9,17 +9,18 @@
 CREATE TABLE IF NOT EXISTS block(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     contents BLOB NOT NULL,
-    signature BLOB NOT NULL,
     previous_hash BLOB NOT NULL,
     created_epoch INTEGER NOT NULL
 );
 
+INSERT INTO block (contents, previous_hash, created_epoch)
+VALUES (x'5f53544152545f424c4f434b', x'00', strftime('%s', 'now') * 1000);
+
 -- -----------------------------------------------------------------------
--- CACHE
+-- VALIDATE
 -- -----------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS cache(
-    block_id INTEGER PRIMARY KEY,
-    contents BLOB NOT NULL,
-    cached_epoch INTEGER NOT NULL,
-    FOREIGN KEY(block_id) REFERENCES block(id)
+CREATE TABLE IF NOT EXISTS validate(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_epoch INTEGER NOT NULL,
+    pass_bool INTEGER
 );

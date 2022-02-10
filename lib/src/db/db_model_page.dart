@@ -3,23 +3,22 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-class DbPage<T> {
+class DbModelPage<T> {
   int? pageSize;
   int? pageNumber;
   int? totalElements;
   int? totalPages;
-  List<T> elements;
+  List<T>? elements;
 
-  DbPage(
+  DbModelPage(
       {this.pageSize,
       this.pageNumber,
       this.totalElements,
       this.totalPages,
-      List<T>? elements})
-      : this.elements = elements ?? List.empty(growable: true);
+      this.elements});
 
   @override
   String toString() {
-    return 'DbPage{pageSize: $pageSize, pageNumber: $pageNumber, totalElements: $totalElements, totalPages: $totalPages}';
+    return 'DbModelPage{pageSize: $pageSize, pageNumber: $pageNumber, totalElements: $totalElements, totalPages: $totalPages, elements: [...]}';
   }
 }

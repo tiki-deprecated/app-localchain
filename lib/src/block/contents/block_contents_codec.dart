@@ -5,7 +5,7 @@
 
 import 'dart:typed_data';
 
-import 'package:localchain/src/block/contents/block_contents_confirm.dart';
+import 'block_contents_confirm.dart';
 
 import 'block_contents.dart';
 import 'block_contents_bytea.dart';

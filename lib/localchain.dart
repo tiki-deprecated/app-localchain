@@ -39,12 +39,14 @@ class Localchain {
 
   static BlockContentsCodec get codec => contentsCodec;
 
-  Future<Block> append(Uint8List contents) async {
-    BlockModel model = await _blockService.add(contents);
-    return Block(
-        contents: model.contents,
-        previousHash: model.previousHash,
-        created: model.created);
+  Future<List<Block>> append(List<Uint8List> contents) async {
+    List<BlockModel> blocks = await _blockService.addAll(contents);
+    return blocks
+        .map((block) => Block(
+            contents: block.contents,
+            previousHash: block.previousHash,
+            created: block.created))
+        .toList();
   }
 
   Future<bool> validate({int pageSize = 100}) async {

@@ -22,17 +22,20 @@ void main() {
       Localchain localchain = await Localchain().open(Uuid().v4());
       Uint8List contents =
           Localchain.codec.encode(BlockContentsJson(json: '"hello":"world'));
-      Block block = await localchain.append(contents);
-      expect(block.created != null, true);
-      expect(block.previousHash != null, true);
-      expect(block.contents, contents);
+      List<Block> blocks = await localchain.append([contents]);
+      expect(blocks.length, 1);
+      expect(blocks.elementAt(0).created != null, true);
+      expect(blocks.elementAt(0).previousHash != null, true);
+      expect(blocks.elementAt(0).contents, contents);
     });
 
     test('get_success', () async {
       Localchain localchain = await Localchain().open(Uuid().v4());
-      Uint8List contents =
-          Localchain.codec.encode(BlockContentsJson(json: '"hello":"world'));
-      for (int i = 0; i < 200; i++) await localchain.append(contents);
+      List<Uint8List> contents = List.empty(growable: true);
+      for (int i = 0; i < 200; i++)
+        contents.add(
+            Localchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
+      await localchain.append(contents);
       List<Block> blocks = await localchain.get(onPage: (page) {
         expect(page.length > 0, true);
       });
@@ -41,9 +44,11 @@ void main() {
 
     test('validate_success', () async {
       Localchain localchain = await Localchain().open(Uuid().v4());
-      Uint8List contents =
-          Localchain.codec.encode(BlockContentsJson(json: '"hello":"world'));
-      for (int i = 0; i < 200; i++) await localchain.append(contents);
+      List<Uint8List> contents = List.empty(growable: true);
+      for (int i = 0; i < 200; i++)
+        contents.add(
+            Localchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
+      await localchain.append(contents);
       bool isValid = await localchain.validate();
       expect(isValid, true);
     });

@@ -21,6 +21,12 @@ class BlockRepository {
   Future<T> transaction<T>(Future<T> Function(Transaction txn) action) =>
       _database.transaction(action);
 
+  Future<void> insertAll(List<BlockModel> blocks, {Transaction? txn}) async {
+    Batch batch = (txn ?? _database).batch();
+    blocks.forEach((block) => batch.insert(_table, block.toMap()));
+    await batch.commit(noResult: true);
+  }
+
   Future<BlockModel> insert(BlockModel block, {Transaction? txn}) async {
     int id = await (txn ?? _database).insert(_table, block.toMap());
     block.id = id;

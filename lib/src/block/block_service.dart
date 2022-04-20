@@ -32,6 +32,28 @@ class BlockService {
             txn: txn);
       });
 
+  Future<List<BlockModel>> addAll(List<Uint8List> contents) =>
+      _repository.transaction<List<BlockModel>>((txn) async {
+        BlockModel? last = await _repository.findLast(txn: txn);
+        if (last == null) throw StateError("Failed to find last Block");
+
+        List<BlockModel> blocks = List.empty(growable: true);
+        blocks.add(BlockModel(
+            contents: contents.elementAt(0),
+            created: DateTime.now(),
+            previousHash: _hash(last)));
+
+        for (int i = 1; i < contents.length; i++) {
+          blocks.add(BlockModel(
+              contents: contents.elementAt(i),
+              created: DateTime.now(),
+              previousHash: _hash(blocks.elementAt(i - 1))));
+        }
+
+        await _repository.insertAll(blocks, txn: txn);
+        return blocks;
+      });
+
   Future<DbModelPage<BlockModel>> page(int number, int size) => _repository
       .transaction<DbModelPage<BlockModel>>((txn) => _page(number, size, txn));
 

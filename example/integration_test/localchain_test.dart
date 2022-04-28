@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:localchain/localchain.dart';
+import 'package:localchain/tiki_localchain.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
@@ -15,13 +15,13 @@ void main() {
 
   group('Localchain Tests', () {
     test('open_success', () async {
-      await Localchain().open(Uuid().v4());
+      await TikiLocalchain().open(Uuid().v4());
     });
 
     test('append_success', () async {
-      Localchain localchain = await Localchain().open(Uuid().v4());
+      TikiLocalchain localchain = await TikiLocalchain().open(Uuid().v4());
       Uint8List contents =
-          Localchain.codec.encode(BlockContentsJson(json: '"hello":"world'));
+          TikiLocalchain.codec.encode(BlockContentsJson(json: '"hello":"world'));
       List<Block> blocks = await localchain.append([contents]);
       expect(blocks.length, 1);
       expect(blocks.elementAt(0).created != null, true);
@@ -30,11 +30,11 @@ void main() {
     });
 
     test('get_success', () async {
-      Localchain localchain = await Localchain().open(Uuid().v4());
+      TikiLocalchain localchain = await TikiLocalchain().open(Uuid().v4());
       List<Uint8List> contents = List.empty(growable: true);
       for (int i = 0; i < 200; i++)
         contents.add(
-            Localchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
+            TikiLocalchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
       await localchain.append(contents);
       List<Block> blocks = await localchain.get(onPage: (page) {
         expect(page.length > 0, true);
@@ -43,11 +43,11 @@ void main() {
     });
 
     test('validate_success', () async {
-      Localchain localchain = await Localchain().open(Uuid().v4());
+      TikiLocalchain localchain = await TikiLocalchain().open(Uuid().v4());
       List<Uint8List> contents = List.empty(growable: true);
       for (int i = 0; i < 200; i++)
         contents.add(
-            Localchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
+            TikiLocalchain.codec.encode(BlockContentsJson(json: '"hello":"world')));
       await localchain.append(contents);
       bool isValid = await localchain.validate();
       expect(isValid, true);

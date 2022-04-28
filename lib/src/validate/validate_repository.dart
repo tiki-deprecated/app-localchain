@@ -43,5 +43,6 @@ class ValidateRepository {
       _log.finest('last: $validate');
       return validate;
     }
+    return null;
   }
 }

@@ -1,3 +1,22 @@
+## 0.0.4
+
+* publish to pub
+
+## 0.0.3
+
+* bulk append to localchain
+
+## 0.0.2
+
+* added confirmation block type
+* added localchain api & corresponding tests
+* added repository tests
+* unit tests for contents
+* validate entire chain once every 30d on open
+* chain validation method
+* add block types for nfts
+* added transactional service methods
+
 ## 0.0.1
 
 * Base functionality implemented. Write, Read, Verify

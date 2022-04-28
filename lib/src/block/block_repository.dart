@@ -44,6 +44,7 @@ class BlockRepository {
       _log.finest('last: $block');
       return block;
     }
+    return null;
   }
 
   Future<List<BlockModel>> findByPreviousHash(Uint8List previousHash,

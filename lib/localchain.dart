@@ -5,7 +5,7 @@
 
 import 'dart:typed_data';
 
-import 'package:localchain/src/db/db_model_page.dart';
+import 'src/db/db_model_page.dart';
 import 'package:logging/logging.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 

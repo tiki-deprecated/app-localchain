@@ -8,9 +8,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:localchain/src/block/block_model.dart';
-import 'package:localchain/src/block/block_repository.dart';
-import 'package:localchain/src/db/db.dart' as db;
+import 'package:tiki_localchain/src/block/block_model.dart';
+import 'package:tiki_localchain/src/block/block_repository.dart';
+import 'package:tiki_localchain/src/db/db.dart' as db;
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 void main() {

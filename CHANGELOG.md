@@ -5,6 +5,7 @@
 ## 0.0.4
 
 * publish to pub
+* rename to TikiLocalchain
 
 ## 0.0.3
 

@@ -25,11 +25,11 @@ export 'src/block/contents/block_contents_schema.dart';
 export 'src/block/contents/block_contents_start.dart';
 export 'src/block/contents/block_contents_uri_nft.dart';
 
-class Localchain {
+class TikiLocalchain {
   final Logger _log = Logger('localchain');
   late final BlockService _blockService;
 
-  Future<Localchain> open(String address,
+  Future<TikiLocalchain> open(String address,
       {String? password, Duration? validate}) async {
     Database database = await db.open(address,
         password: password, validate: validate ?? Duration(days: 30));

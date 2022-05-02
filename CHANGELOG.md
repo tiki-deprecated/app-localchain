@@ -1,3 +1,7 @@
+## 0.0.5
+
+* update naming to tiki_localchain
+
 ## 0.0.4
 
 * publish to pub
@@ -16,6 +20,8 @@
 * chain validation method
 * add block types for nfts
 * added transactional service methods
+
+
 
 ## 0.0.1
 

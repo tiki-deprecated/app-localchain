@@ -62,7 +62,7 @@ Future<void> _onOpen(Database db, {Duration? validate}) async {
 
 Future<void> _executeScript(Database db, String name) async {
   String script =
-      await rootBundle.loadString('packages/localchain/src/db/sql/' + name);
+      await rootBundle.loadString('packages/tiki_localchain/src/db/sql/' + name);
   List<String> sqlList = script.split(";");
   for (String sqlString in sqlList) {
     String sql = sqlString.trim();

@@ -11,7 +11,7 @@ dependencies:
   logging: ^1.0.1
   sqflite_sqlcipher: ^2.1.0
   uuid: ^3.0.5
-  localchain:
+  tiki_localchain:
     path: ../
 
 dev_dependencies:

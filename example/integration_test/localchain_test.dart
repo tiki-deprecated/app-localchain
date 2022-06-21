@@ -29,6 +29,7 @@ void main() {
       expect(blocks.elementAt(0).contents, contents);
     });
 
+
     test('get_success', () async {
       TikiLocalchain localchain = await TikiLocalchain().open(Uuid().v4());
       List<Uint8List> contents = List.empty(growable: true);

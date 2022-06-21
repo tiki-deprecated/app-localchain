@@ -8,9 +8,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  logging: ^1.0.1
-  sqflite_sqlcipher: ^2.1.0
-  uuid: ^3.0.5
+  logging: ^1.0.2
+  sqflite_sqlcipher: ^2.1.1
+  uuid: ^3.0.6
   tiki_localchain:
     path: ../
 

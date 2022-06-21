@@ -1,3 +1,7 @@
+## 0.0.6
+
+* add sentry tests
+
 ## 0.0.5
 
 * update naming to tiki_localchain
